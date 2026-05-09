@@ -13,6 +13,7 @@ import { SimulationResults } from "@/components/sim/SimulationResults";
 
 import { getLevel } from "@flow/shared/levels";
 import { evaluateRules } from "@flow/shared/engine/validator";
+import { canSimulate, diagramSimulatabilityIssue } from "@flow/shared/engine/simulatability";
 import { useSimulation } from "@/lib/hooks/useSimulation";
 import { recordAttempt, recordCompletion } from "@/lib/storage/progress";
 import { DEFAULT_FAN_OUT, COMPONENT_SPECS } from "@flow/shared/engine/component-specs";
@@ -105,22 +106,33 @@ export default function PlayPage() {
     const ruleResults = evaluateRules(diagram, level.rules);
     const structuralPassed = ruleResults.every((r) => r.passed);
     setBaseReport({ structuralPassed, ruleResults });
-    if (structuralPassed) {
+    // Always try to run the simulation — the player should be able to
+    // experiment with broken or incomplete designs and watch what happens
+    // (e.g. drop a queue from "Smooth the Burst" and see the server melt).
+    // Completion is gated on rules + sim passing in the effect below.
+    if (canSimulate(diagram)) {
       sim.reset();
       // Defer to next microtask so reset state is committed before play().
       Promise.resolve().then(() => sim.play());
     } else {
+      // Truly nothing to simulate — record the attempt so the level shows
+      // up as "tried" but skip the network round-trip.
       recordAttempt(level.id, diagram);
     }
   }, [diagram, level, sim]);
 
-  // When the streaming run finishes, persist progress (no setState here —
-  // the displayed report is derived from baseReport + sim.outcome).
+  // When the streaming run finishes, persist progress. Completion requires
+  // BOTH the structural rules and the simulation SLA to pass — sandbox runs
+  // (rules failing) only ever count as attempts.
   useEffect(() => {
     if (!sim.outcome || !level) return;
-    if (sim.outcome.passed) recordCompletion(level.id, sim.outcome.metrics, diagram);
-    else recordAttempt(level.id, diagram);
-  }, [sim.outcome, level, diagram]);
+    const structuralPassed = baseReport?.structuralPassed ?? false;
+    if (sim.outcome.passed && structuralPassed) {
+      recordCompletion(level.id, sim.outcome.metrics, diagram);
+    } else {
+      recordAttempt(level.id, diagram);
+    }
+  }, [sim.outcome, level, diagram, baseReport]);
 
   const handleReset = useCallback(() => {
     setDiagram(emptyDiagram());
@@ -162,6 +174,9 @@ export default function PlayPage() {
     );
   }, [level]);
 
+  const simulatabilityIssue = useMemo(() => diagramSimulatabilityIssue(diagram), [diagram]);
+  const isSandboxMode = baseReport !== null && !baseReport.structuralPassed;
+
   if (!level) {
     return (
       <div style={{ padding: 32, color: "#e5e7eb", background: "#0b1020", minHeight: "100vh" }}>
@@ -179,7 +194,30 @@ export default function PlayPage() {
         onReset={handleReset}
         onRunSimulation={handleRunSimulation}
         isSimulating={sim.isRunning}
+        runDisabled={!canSimulate(diagram)}
+        runDisabledReason={simulatabilityIssue ?? undefined}
       />
+      {isSandboxMode && (sim.frame || sim.outcome) && (
+        <div
+          role="status"
+          style={{
+            background: "rgba(251, 191, 36, 0.08)",
+            borderBottom: "1px solid rgba(251, 191, 36, 0.3)",
+            color: "#fcd34d",
+            padding: "6px 16px",
+            fontSize: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span>🧪</span>
+          <span>
+            <strong>Sandbox run.</strong> The level&apos;s rules aren&apos;t met yet, so this run won&apos;t count
+            toward completion — but you can still watch what happens. Compare it to a design that satisfies the rules.
+          </span>
+        </div>
+      )}
       {(sim.isRunning || sim.frame || sim.loading || sim.error) && (
         <div style={simBarStyle}>
           {sim.loading ? (

@@ -5,9 +5,21 @@ interface ToolbarProps {
   onReset: () => void;
   onRunSimulation: () => void;
   isSimulating?: boolean;
+  /** When true, the Run button is disabled (e.g. diagram has no client). */
+  runDisabled?: boolean;
+  /** Tooltip + aria-label explaining why Run is disabled. */
+  runDisabledReason?: string;
 }
 
-export function Toolbar({ onValidate, onReset, onRunSimulation, isSimulating }: ToolbarProps) {
+export function Toolbar({
+  onValidate,
+  onReset,
+  onRunSimulation,
+  isSimulating,
+  runDisabled,
+  runDisabledReason,
+}: ToolbarProps) {
+  const runIsDisabled = isSimulating || runDisabled;
   return (
     <div
       style={{
@@ -22,11 +34,18 @@ export function Toolbar({ onValidate, onReset, onRunSimulation, isSimulating }: 
       <button
         type="button"
         onClick={onRunSimulation}
-        disabled={isSimulating}
-        style={btnStyle("#60a5fa", isSimulating)}
+        disabled={runIsDisabled}
+        title={runDisabled ? runDisabledReason : undefined}
+        aria-label={runDisabled ? runDisabledReason : "Run Simulation"}
+        style={btnStyle("#60a5fa", runIsDisabled)}
       >
         {isSimulating ? "Simulating…" : "Run Simulation"}
       </button>
+      {runDisabled && runDisabledReason && (
+        <span style={{ alignSelf: "center", fontSize: 12, opacity: 0.7, color: "#fcd34d" }}>
+          {runDisabledReason}
+        </span>
+      )}
       <div style={{ flex: 1 }} />
       <button type="button" onClick={onReset} style={btnStyle("#f87171")}>Reset</button>
     </div>
