@@ -29,8 +29,24 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
+  // Default: allow any localhost / 127.0.0.1 origin in dev so port shuffling
+  // (e.g. Next falling back to :3001 when :3000 is busy) doesn't break the
+  // app. In prod, override via CORS_ORIGINS env.
+  const allowedOrigins = opts.corsOrigins;
   await app.register(cors, {
-    origin: opts.corsOrigins ?? ["http://localhost:3000"],
+    origin: allowedOrigins
+      ? allowedOrigins
+      : (origin, cb) => {
+          if (!origin) return cb(null, true); // same-origin / curl
+          try {
+            const url = new URL(origin);
+            const isLocalhost =
+              url.hostname === "localhost" || url.hostname === "127.0.0.1";
+            return cb(null, isLocalhost);
+          } catch {
+            return cb(null, false);
+          }
+        },
     methods: ["GET", "POST"],
   });
 
