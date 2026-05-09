@@ -26,6 +26,19 @@ export function diagramSimulatabilityIssue(diagram: Diagram): string | null {
   if (!hasClientOutgoing) {
     return "Connect your client to something — requests need somewhere to go.";
   }
+  // Real-world clients talk to a single entry point (a load balancer, API gateway,
+  // CDN, etc.) — they don't fan out to multiple backends directly. Catch the
+  // anti-pattern early so the player adds a proper front door instead.
+  for (const client of clients) {
+    const downstream = new Set(
+      diagram.edges
+        .filter((e) => e.fromNodeId === client.id)
+        .map((e) => e.toNodeId),
+    );
+    if (downstream.size > 1) {
+      return "A client should talk to a single entry point. Put a load balancer (or API gateway) in front and have the client connect only to that.";
+    }
+  }
   return null;
 }
 

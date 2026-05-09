@@ -61,4 +61,40 @@ describe("simulatability", () => {
     };
     expect(canSimulate(d)).toBe(true);
   });
+
+  /**
+   * Real-world clients talk to a single entry point (LB, gateway, CDN), not
+   * directly to multiple backends. Catch the anti-pattern up front so the
+   * player learns to put a proper front door in place.
+   */
+  it("rejects a client wired directly to multiple backends", () => {
+    const d: Diagram = {
+      nodes: [
+        { id: "c", kind: "client", position: { x: 0, y: 0 } },
+        { id: "s1", kind: "server", position: { x: 0, y: 0 } },
+        { id: "s2", kind: "server", position: { x: 0, y: 0 } },
+      ],
+      edges: [
+        { id: "e1", fromNodeId: "c", toNodeId: "s1" },
+        { id: "e2", fromNodeId: "c", toNodeId: "s2" },
+      ],
+    };
+    const issue = diagramSimulatabilityIssue(d);
+    expect(issue).toMatch(/single entry point|load balancer/i);
+    expect(canSimulate(d)).toBe(false);
+  });
+
+  it("accepts a client with multiple edges all pointing to the same target (idempotent)", () => {
+    const d: Diagram = {
+      nodes: [
+        { id: "c", kind: "client", position: { x: 0, y: 0 } },
+        { id: "lb", kind: "load_balancer", position: { x: 0, y: 0 } },
+      ],
+      edges: [
+        { id: "e1", fromNodeId: "c", toNodeId: "lb" },
+        { id: "e2", fromNodeId: "c", toNodeId: "lb" },
+      ],
+    };
+    expect(canSimulate(d)).toBe(true);
+  });
 });
