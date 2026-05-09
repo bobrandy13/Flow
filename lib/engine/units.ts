@@ -96,10 +96,16 @@ export const KIND_EXPLAINERS: Record<ComponentKind, KindExplainer> = {
     analogy: "Think: the host at a restaurant deciding which waiter takes the next table.",
   },
   queue: {
-    one_liner: "Buffers work for later.",
+    one_liner: "Decouples producers from consumers.",
     what_it_does:
-      "A queue accepts requests faster than the downstream can process them, smoothing out spikes. Producers don't wait for consumers — work piles up in the buffer.",
-    analogy: "Think: the order tickets clipped to a rail in a kitchen.",
+      "A queue accepts messages from a producer and acknowledges them instantly — the producer doesn't wait for the consumer to do the work. The consumer pulls messages from the queue at its own pace. This lets a fast producer absorb bursts without overwhelming a slower consumer; the trade-off is eventual consistency (the producer doesn't know if the work succeeded).",
+    analogy: "Think: a kitchen ticket rail. Waiters drop orders on the rail and walk away; cooks pull tickets when they're free.",
+  },
+  shard: {
+    one_liner: "Routes by key so each piece of data lives on one downstream.",
+    what_it_does:
+      "A shard router splits traffic deterministically: the same request id always lands on the same downstream. This lets you scale past a single database's limits — each shard owns a slice of the keyspace and runs at its own capacity. Trade-off: queries that span shards need a separate aggregation step.",
+    analogy: "Think: assigning library books by author surname. A–F to one shelf, G–M to another. Anyone searching always knows which shelf to check.",
   },
 };
 

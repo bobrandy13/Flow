@@ -50,11 +50,25 @@ export const COMPONENT_SPECS: Record<ComponentKind, ComponentSpec & { color: str
   queue: {
     kind: "queue",
     label: "Queue",
-    baseLatency: 2,
-    jitter: 0.1,
-    capacity: 100,
+    // Time spent inside the queue node itself for the immediate ACK roundtrip.
+    // Real queue work (forwarding pending messages to the consumer) happens
+    // separately and isn't bounded by this latency.
+    baseLatency: 1,
+    jitter: 0.05,
+    // High concurrency for the brief ACK roundtrip; the *pending depth*
+    // (messages waiting to be consumed) is tracked separately by the simulator.
+    capacity: 200,
     color: "#fb923c",
     emoji: "📬",
+  },
+  shard: {
+    kind: "shard",
+    label: "Shard Router",
+    baseLatency: 1,
+    jitter: 0.05,
+    capacity: 400,
+    color: "#06b6d4",
+    emoji: "🔀",
   },
 };
 

@@ -9,12 +9,21 @@ export const COMPONENT_KINDS = [
   "cache",
   "load_balancer",
   "queue",
+  "shard",
 ] as const;
 
 export type ComponentKind = (typeof COMPONENT_KINDS)[number];
 
-/** Fan-out policies a load balancer can use. Player-selectable. */
-export const FAN_OUT_POLICIES = ["round_robin", "random", "least_loaded"] as const;
+/** Fan-out policies a load balancer or shard can use.
+ *  - round_robin / random / least_loaded: classic load balancing.
+ *  - consistent_hash: deterministic per-request routing — the same requestId
+ *    always lands on the same downstream. Used by shards. */
+export const FAN_OUT_POLICIES = [
+  "round_robin",
+  "random",
+  "least_loaded",
+  "consistent_hash",
+] as const;
 export type FanOutPolicy = (typeof FAN_OUT_POLICIES)[number];
 
 /**
