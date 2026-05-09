@@ -289,6 +289,36 @@ const expectedDesigns: Record<string, Diagram> = {
       { id: "e5", fromNodeId: "s", toNodeId: "c" },
     ],
   },
+  "14-cache-the-world": {
+    nodes: [
+      { id: "c", kind: "client", position: { x: 0, y: 0 } },
+      { id: "cdn", kind: "cdn", position: { x: 200, y: 0 } },
+      { id: "s", kind: "server", position: { x: 400, y: 0 } },
+      { id: "d", kind: "database", position: { x: 600, y: 0 } },
+    ],
+    edges: [
+      { id: "e1", fromNodeId: "c", toNodeId: "cdn", cacheHitRate: 0.95 },
+      { id: "e2", fromNodeId: "cdn", toNodeId: "s" },
+      { id: "e3", fromNodeId: "s", toNodeId: "d" },
+      { id: "e4", fromNodeId: "s", toNodeId: "cdn" },
+      { id: "e5", fromNodeId: "cdn", toNodeId: "c" },
+    ],
+  },
+  "15-two-continents": {
+    nodes: [
+      { id: "c", kind: "client", position: { x: 0, y: 0 }, region: "eu-west" },
+      { id: "cdn", kind: "cdn", position: { x: 200, y: 0 }, region: "eu-west" },
+      { id: "s", kind: "server", position: { x: 400, y: 0 }, region: "us-east" },
+      { id: "d", kind: "database", position: { x: 600, y: 0 }, region: "us-east" },
+    ],
+    edges: [
+      { id: "e1", fromNodeId: "c", toNodeId: "cdn", cacheHitRate: 0.95 },
+      { id: "e2", fromNodeId: "cdn", toNodeId: "s" },
+      { id: "e3", fromNodeId: "s", toNodeId: "d" },
+      { id: "e4", fromNodeId: "s", toNodeId: "cdn" },
+      { id: "e5", fromNodeId: "cdn", toNodeId: "c" },
+    ],
+  },
 };
 
 describe("level solvability", () => {

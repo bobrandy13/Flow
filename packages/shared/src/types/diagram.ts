@@ -23,6 +23,14 @@ export interface DiagramNode {
    */
   replicaGroupId?: string;
   role?: "primary" | "replica";
+  /**
+   * Geographic region this node lives in. When a request crosses from a
+   * node in one region to a node in a different region, the simulator adds
+   * `CROSS_REGION_TICKS` to the destination's dwell. Undefined region is
+   * treated as "no region" — same-region cost with everything (including
+   * other unset nodes), so L1–L13 keep their existing behaviour.
+   */
+  region?: string;
 }
 
 /**

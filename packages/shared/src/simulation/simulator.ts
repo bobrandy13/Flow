@@ -9,6 +9,7 @@ import type {
 } from "../types/validation";
 import type { SLA, Workload } from "../types/level";
 import { COMPONENT_SPECS, DEFAULT_FAN_OUT } from "../engine/component-specs";
+import { CROSS_REGION_TICKS } from "../engine/regions";
 
 /** Deterministic mulberry32 RNG. */
 function mulberry32(seed: number) {
@@ -572,7 +573,16 @@ export function* simulateStream(
     if (rt.inFlight > rt.peakInFlight) rt.peakInFlight = rt.inFlight;
     const spec = COMPONENT_SPECS[rt.node.kind];
     const jitter = spec.jitter > 0 ? 1 + (rng() * 2 - 1) * spec.jitter : 1;
-    const dwell = Math.max(0, Math.round(spec.baseLatency * jitter));
+    // Cross-region transit cost: if the previous hop on this request's path
+    // is in a different region than this node, add CROSS_REGION_TICKS to the
+    // dwell. Same-region or unset-region transitions cost nothing extra, so
+    // single-region levels (no `region` set anywhere) keep their baseline.
+    const prevNodeId = path.length >= 2 ? path[path.length - 2] : null;
+    const prevRegion = prevNodeId ? runtimes.get(prevNodeId)?.node.region : undefined;
+    const currRegion = rt.node.region;
+    const crossRegion = !!(prevRegion && currRegion && prevRegion !== currRegion);
+    const transitDwell = crossRegion ? CROSS_REGION_TICKS : 0;
+    const dwell = Math.max(0, Math.round(spec.baseLatency * jitter)) + transitDwell;
     inFlight.push({
       id: nextRequestId++,
       nodeId,

@@ -55,6 +55,7 @@ const CHAPTER_ORDER: Array<NonNullable<Level["chapter"]>> = [
   "Scaling",
   "Composition",
   "Reliability",
+  "Edge",
 ];
 
 const CHAPTER_BLURBS: Record<NonNullable<Level["chapter"]>, string> = {
@@ -62,6 +63,7 @@ const CHAPTER_BLURBS: Record<NonNullable<Level["chapter"]>, string> = {
   Scaling: "Handle bursts, decouple producers from consumers, partition by key.",
   Composition: "Combine patterns into real-world topologies. No single right answer.",
   Reliability: "Survive failures: replicas, rate limits, circuit breakers, dead-letter queues.",
+  Edge: "Move work closer to users: CDNs, regional caching, the speed-of-light tax.",
 };
 
 export default function LevelsPage() {

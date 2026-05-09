@@ -579,3 +579,87 @@ export const LESSON_13_DLQ: Lesson = {
     "DLQ depth is a key alert signal — a growing DLQ means something is broken upstream.",
   ],
 };
+
+export const LESSON_14_CACHE_THE_WORLD: Lesson = {
+  tagline: "Most read traffic should never reach your origin. That's what edges are for.",
+  sections: [
+    {
+      heading: "Why an edge cache",
+      blocks: [
+        {
+          type: "p",
+          text: "Read-heavy traffic — product pages, images, JS bundles, news articles — is mostly the same answer over and over. Asking your origin server for it every time wastes capacity you'll need for the unique requests (checkouts, personalised feeds, writes).",
+        },
+        {
+          type: "p",
+          text: "A CDN sits between your client and your origin. On a hit, it answers immediately and never calls back. On a miss, it forwards to the origin and caches the answer for next time.",
+        },
+      ],
+    },
+    {
+      heading: "Hit rate is everything",
+      blocks: [
+        {
+          type: "bullets",
+          items: [
+            "If 90% of traffic hits the CDN, your origin only sees 10% — capacity multiplied by 10×.",
+            "Cacheable content is anything safe to share between users (with the right keying).",
+            "Cache invalidation is the hard part — short TTLs are usually fine for v1.",
+          ],
+        },
+        {
+          type: "callout",
+          tone: "info",
+          title: "This level",
+          text: "The origin server's capacity is well below the incoming traffic. Without a CDN, drops mount. Insert a CDN between client and server with a high hit rate and watch the origin breathe.",
+        },
+      ],
+    },
+  ],
+  cheatsheet: [
+    "Put a CDN in front of any read-heavy, cache-friendly endpoint.",
+    "The CDN's hit rate is your origin offload multiplier. 90% hit ⇒ 10× the headroom.",
+  ],
+};
+
+export const LESSON_15_TWO_CONTINENTS: Lesson = {
+  tagline: "Light is fast — but not THAT fast. Distance shows up in p95.",
+  sections: [
+    {
+      heading: "The speed of light tax",
+      blocks: [
+        {
+          type: "p",
+          text: "Bits travel at roughly 200,000 km/s through fibre. London to New York and back is ~5,500 km × 2 ≈ 55ms of just-physics latency, before your server does anything. Add TCP handshakes, TLS, and a few hops — you're easily looking at 80–120ms per round trip.",
+        },
+        {
+          type: "p",
+          text: "Flow models this as cross-region transit cost: every time a request crosses from one region to another, the simulator adds 80ms (8 ticks). Same-region or unset-region transitions cost nothing extra.",
+        },
+      ],
+    },
+    {
+      heading: "Edge caching to the rescue",
+      blocks: [
+        {
+          type: "bullets",
+          items: [
+            "Place a CDN in the same region as your users. Most reads terminate locally, never crossing the ocean.",
+            "Only cache misses pay the cross-region cost.",
+            "p95 latency is dominated by the slowest 5% — exactly the requests that crossed the ocean.",
+          ],
+        },
+        {
+          type: "callout",
+          tone: "info",
+          title: "This level",
+          text: "Your client lives in EU-West. Your origin server and database are in US-East. The SLA enforces a tight p95. Without an edge CDN in EU-West with a high hit rate, every request pays the Atlantic round-trip and you fail.",
+        },
+      ],
+    },
+  ],
+  cheatsheet: [
+    "If your users are far from your origin, a regional edge cache is not optional — it's required.",
+    "p95 latency is what users feel. Cross-region hops blow it up disproportionately.",
+  ],
+};

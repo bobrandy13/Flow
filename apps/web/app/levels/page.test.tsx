@@ -27,7 +27,7 @@ describe("LevelsPage chapters", () => {
     // localStorage is empty in a fresh test → only Basics is unlocked.
     render(<LevelsPage />);
     const lockBadges = screen.getAllByText(/locked/);
-    // Scaling + Composition + Reliability all locked initially.
-    expect(lockBadges.length).toBe(3);
+    // Scaling + Composition + Reliability + Edge all locked initially.
+    expect(lockBadges.length).toBe(4);
   });
 });

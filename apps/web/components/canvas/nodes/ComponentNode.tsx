@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { COMPONENT_SPECS } from "@flow/shared/engine/component-specs";
 import { throughputPerSecond } from "@flow/shared/engine/units";
+import { REGION_COLORS, REGION_LABELS, isRegion } from "@flow/shared/engine/regions";
 import type { ComponentKind } from "@flow/shared/types/components";
 import type { NodeRuntimeSnapshot } from "@flow/shared/types/validation";
 
@@ -13,6 +14,7 @@ export interface ComponentNodeData {
   runtime?: NodeRuntimeSnapshot;
   replicaGroupId?: string;
   role?: "primary" | "replica";
+  region?: string;
   [key: string]: unknown;
 }
 
@@ -107,6 +109,27 @@ export function ComponentNode({ data, selected }: NodeProps) {
           }}
         >
           🔗 {nodeData.role === "primary" ? "P" : "R"}
+        </div>
+      )}
+      {isRegion(nodeData.region) && (
+        <div
+          aria-label={`region ${nodeData.region}`}
+          title={`Region: ${REGION_LABELS[nodeData.region]} — cross-region hops add ~80ms.`}
+          style={{
+            position: "absolute",
+            top: 4,
+            left: 6,
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: 0.4,
+            background: REGION_COLORS[nodeData.region],
+            color: "#0b1020",
+            borderRadius: 6,
+            padding: "1px 5px",
+            lineHeight: 1.2,
+          }}
+        >
+          {REGION_LABELS[nodeData.region]}
         </div>
       )}
       {runtime && !isUnbounded && (() => {

@@ -91,7 +91,7 @@ export interface Level {
    * levels page and chapters are unlocked in order. Defaults to "Basics"
    * when unset.
    */
-  chapter?: "Basics" | "Scaling" | "Composition" | "Reliability";
+  chapter?: "Basics" | "Scaling" | "Composition" | "Reliability" | "Edge";
   /** Components the player is allowed to place from the palette. */
   allowedComponents: ComponentKind[];
   /** Optional cap on count per kind. */

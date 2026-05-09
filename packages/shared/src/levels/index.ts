@@ -13,6 +13,8 @@ import {
   LESSON_11_RATE_LIMITER,
   LESSON_12_CIRCUIT_BREAKER,
   LESSON_13_DLQ,
+  LESSON_14_CACHE_THE_WORLD,
+  LESSON_15_TWO_CONTINENTS,
 } from "./lessons";
 
 export const LEVELS: Level[] = [
@@ -335,6 +337,45 @@ export const LEVELS: Level[] = [
       workload: { requestsPerTick: 12, ticks: 60 },
       sla: { minSuccessRate: 0.5, maxP95Latency: 100 },
       seed: 13,
+    },
+  },
+  {
+    id: "14-cache-the-world",
+    title: "Cache the World",
+    chapter: "Edge",
+    lesson: LESSON_14_CACHE_THE_WORLD,
+    brief:
+      "Read-heavy traffic is overwhelming a single origin server. Insert a CDN between client and origin so most reads terminate at the edge and never reach your backend.",
+    allowedComponents: ["client", "cdn", "server", "database"],
+    maxOf: { client: 1, cdn: 1, server: 1, database: 1 },
+    rules: [
+      { type: "requires_kind", kind: "cdn", min: 1 },
+      { type: "requires_path", from: "client", to: "cdn" },
+      { type: "requires_path", from: "cdn", to: "server" },
+    ],
+    simulation: {
+      workload: { requestsPerTick: 90, ticks: 80 },
+      sla: { minSuccessRate: 0.85, maxP95Latency: 100 },
+      seed: 14,
+    },
+  },
+  {
+    id: "15-two-continents",
+    title: "Two Continents",
+    chapter: "Edge",
+    lesson: LESSON_15_TWO_CONTINENTS,
+    brief:
+      "Your client lives in EU-West; your origin is in US-East. Every cross-Atlantic round-trip costs ~80ms. Place an edge CDN in EU-West so most reads terminate locally and your p95 stays inside SLA.",
+    allowedComponents: ["client", "cdn", "server", "database"],
+    maxOf: { client: 1, cdn: 1, server: 1, database: 1 },
+    rules: [
+      { type: "requires_kind", kind: "cdn", min: 1 },
+      { type: "requires_path", from: "client", to: "cdn" },
+    ],
+    simulation: {
+      workload: { requestsPerTick: 8, ticks: 80 },
+      sla: { minSuccessRate: 0.85, maxP95Latency: 80 },
+      seed: 15,
     },
   },
 ];

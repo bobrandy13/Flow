@@ -6,6 +6,7 @@ import type { NodeRuntimeSnapshot } from "@flow/shared/types/validation";
 import { FAN_OUT_POLICIES } from "@flow/shared/types/components";
 import { COMPONENT_SPECS, DEFAULT_FAN_OUT } from "@flow/shared/engine/component-specs";
 import { throughputPerSecond } from "@flow/shared/engine/units";
+import { REGIONS, REGION_LABELS } from "@flow/shared/engine/regions";
 import { ComponentInfoCard } from "./ComponentInfoCard";
 
 interface NodeInspectorProps {
@@ -50,9 +51,60 @@ export function NodeInspector({ diagram, selectedNodeId, runtime, onChange }: No
       {node.kind === "database" && (
         <ReplicaControls node={node} diagram={diagram} onChange={onChange} />
       )}
+      <RegionSelector
+        value={node.region}
+        onChange={(region) => {
+          const updated: DiagramNode = { ...node, region };
+          onChange({
+            ...diagram,
+            nodes: diagram.nodes.map((n) => (n.id === node.id ? updated : n)),
+          });
+        }}
+      />
       <button onClick={handleDelete} style={deleteButtonStyle} aria-label="Delete node">
         🗑 Delete node
       </button>
+    </div>
+  );
+}
+
+function RegionSelector({
+  value,
+  onChange,
+}: {
+  value: string | undefined;
+  onChange: (region: string | undefined) => void;
+}) {
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.65, marginBottom: 4 }}>Region</div>
+      <select
+        aria-label="Region"
+        value={value ?? ""}
+        onChange={(e) => {
+          const v = e.target.value;
+          onChange(v === "" ? undefined : v);
+        }}
+        style={{
+          width: "100%",
+          padding: "6px 8px",
+          borderRadius: 6,
+          background: "#0f172a",
+          color: "#e5e7eb",
+          border: "1px solid #1f2937",
+          fontSize: 12,
+        }}
+      >
+        <option value="">— None —</option>
+        {REGIONS.map((r) => (
+          <option key={r} value={r}>
+            {REGION_LABELS[r]}
+          </option>
+        ))}
+      </select>
+      <div style={{ fontSize: 10, opacity: 0.55, marginTop: 4 }}>
+        Cross-region hops add ~80ms to the request.
+      </div>
     </div>
   );
 }

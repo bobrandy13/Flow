@@ -47,14 +47,33 @@ function isComponentKind(s: string): s is ComponentKind {
   return (COMPONENT_KINDS as readonly string[]).includes(s);
 }
 
-function toRfEdge(e: DiagramEdge, kindOf: (id: string) => ComponentKind | undefined): Edge {
-  const targetIsCache = kindOf(e.toNodeId) === "cache";
+function toRfEdge(
+  e: DiagramEdge,
+  kindOf: (id: string) => ComponentKind | undefined,
+  regionOf: (id: string) => string | undefined,
+): Edge {
+  const targetIsCache = kindOf(e.toNodeId) === "cache" || kindOf(e.toNodeId) === "cdn";
+  const fromRegion = regionOf(e.fromNodeId);
+  const toRegion = regionOf(e.toNodeId);
+  const crossRegion = !!(fromRegion && toRegion && fromRegion !== toRegion);
+  const cacheLabel = targetIsCache && e.cacheHitRate != null
+    ? `hit ${Math.round(e.cacheHitRate * 100)}%`
+    : undefined;
+  const label = crossRegion
+    ? cacheLabel
+      ? `${cacheLabel} · +80ms`
+      : "+80ms"
+    : cacheLabel;
   return {
     id: e.id,
     source: e.fromNodeId,
     target: e.toNodeId,
-    label: targetIsCache && e.cacheHitRate != null ? `hit ${Math.round(e.cacheHitRate * 100)}%` : undefined,
+    label,
     animated: false,
+    style: crossRegion
+      ? { strokeDasharray: "6 4", stroke: "#a855f7", strokeWidth: 1.5 }
+      : undefined,
+    labelStyle: crossRegion ? { fill: "#a855f7", fontWeight: 600 } : undefined,
   };
 }
 
@@ -80,6 +99,10 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
     (id: string) => diagram.nodes.find((n) => n.id === id)?.kind,
     [diagram.nodes],
   );
+  const regionOf = useCallback(
+    (id: string) => diagram.nodes.find((n) => n.id === id)?.region,
+    [diagram.nodes],
+  );
 
   // We deliberately read measuredRef during render: we need to re-attach the
   // latest measurements every render so React Flow doesn't flash dropped nodes
@@ -100,6 +123,7 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
         runtime: runtimeByNodeId?.[n.id],
         replicaGroupId: n.replicaGroupId,
         role: n.role,
+        region: n.region,
       },
       selected: selectedNodes.has(n.id),
       ...(m ? { measured: m, width: m.width, height: m.height } : {}),
@@ -110,7 +134,7 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
   if (transitions) for (const t of transitions) activeEdgeIds.add(t.edgeId);
   for (const e of diagram.edges) {
     rfEdges.push({
-      ...toRfEdge(e, kindOf),
+      ...toRfEdge(e, kindOf, regionOf),
       selected: selectedEdges.has(e.id),
       animated: activeEdgeIds.has(e.id),
     });
