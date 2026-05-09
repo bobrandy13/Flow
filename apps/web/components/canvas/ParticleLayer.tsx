@@ -21,12 +21,57 @@ interface Particle {
   duration: number;
 }
 
-const MAX_PARTICLES = 120;
+const MAX_PARTICLES = 240;
 const FORWARD_COLOR = "#60a5fa";
 const RETURN_COLOR = "#34d399";
 /** Perpendicular offset (in flow units) between forward/return lanes. */
 const LANE_OFFSET = 7;
 let nextParticleId = 1;
+
+/**
+ * Pick up to `limit` transitions while guaranteeing **per-edge fairness**.
+ *
+ * The simulator emits transitions grouped by phase (all client injections
+ * first, then forward hops, then returns). A naïve `slice(0, limit)` will
+ * therefore starve downstream edges whenever the per-tick volume exceeds
+ * the particle cap — e.g. at 22 req/tick the entire cap is consumed by
+ * `client → load_balancer` and the dots never appear past the LB.
+ *
+ * Round-robin across `edgeId+direction` buckets so every active edge
+ * shows at least one dot before any single edge gets a second.
+ */
+export function sampleTransitionsFairly<T extends { edgeId: string; direction: string }>(
+  transitions: T[],
+  limit: number,
+): T[] {
+  if (limit <= 0 || transitions.length === 0) return [];
+  if (transitions.length <= limit) return transitions;
+  const buckets = new Map<string, T[]>();
+  const order: string[] = [];
+  for (const t of transitions) {
+    const key = `${t.edgeId}|${t.direction}`;
+    let b = buckets.get(key);
+    if (!b) {
+      b = [];
+      buckets.set(key, b);
+      order.push(key);
+    }
+    b.push(t);
+  }
+  const picked: T[] = [];
+  let exhausted = false;
+  while (picked.length < limit && !exhausted) {
+    exhausted = true;
+    for (const key of order) {
+      const b = buckets.get(key)!;
+      if (b.length === 0) continue;
+      picked.push(b.shift()!);
+      exhausted = false;
+      if (picked.length >= limit) break;
+    }
+  }
+  return picked;
+}
 
 const internalsSelector = (s: ReactFlowState) => s.nodeLookup;
 
@@ -71,7 +116,7 @@ export function ParticleLayer({ transitions, durationMs = 600 }: ParticleLayerPr
       const live = prev.filter((p) => t0 - p.spawnedAt < p.duration);
       const room = MAX_PARTICLES - live.length;
       if (room <= 0) return live;
-      const added: Particle[] = transitions.slice(0, room).map((t) => ({
+      const added: Particle[] = sampleTransitionsFairly(transitions, room).map((t) => ({
         id: nextParticleId++,
         edgeId: t.edgeId,
         fromNodeId: t.fromNodeId,
