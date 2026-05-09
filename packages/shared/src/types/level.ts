@@ -34,6 +34,12 @@ export interface Level {
   id: string;
   title: string;
   brief: string;
+  /**
+   * Curriculum chapter this level belongs to. Levels are grouped on the
+   * levels page and chapters are unlocked in order. Defaults to "Basics"
+   * when unset.
+   */
+  chapter?: "Basics" | "Scaling" | "Composition";
   /** Components the player is allowed to place from the palette. */
   allowedComponents: ComponentKind[];
   /** Optional cap on count per kind. */
