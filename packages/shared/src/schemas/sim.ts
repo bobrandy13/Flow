@@ -57,6 +57,16 @@ export const diagramSchema = z.object({
 const workloadSchema = z.object({
   requestsPerTick: z.number().int().min(1).max(1000),
   ticks: z.number().int().min(1).max(2000),
+  bursts: z
+    .array(
+      z.object({
+        atTick: z.number().int().min(0).max(2000),
+        durationTicks: z.number().int().min(1).max(2000),
+        multiplier: z.number().min(0.1).max(20),
+      }),
+    )
+    .max(10)
+    .optional(),
 });
 
 const slaSchema = z.object({

@@ -140,8 +140,13 @@ export function* simulateStream(
 
     // 1. Inject requests from each client into a downstream node.
     if (injecting) {
+      const burstMultiplier = computeBurstMultiplier(workload.bursts, tick);
+      const effectivePerClient = Math.max(
+        1,
+        Math.round(perClientPerTick * burstMultiplier),
+      );
       for (const client of clients) {
-        for (let i = 0; i < perClientPerTick; i++) {
+        for (let i = 0; i < effectivePerClient; i++) {
           const next = pickNextNotInPath(client.id, [client.id], successors, rrCursor, rng, "round_robin");
           if (!next) continue; // disconnected client, request never enters system.
           recordTransition(client.id, next, "forward", transitionsThisTick);
@@ -430,6 +435,24 @@ function hasPendingWork(runtimes: Map<string, NodeRuntime>): boolean {
     if (rt.pending.length > 0) return true;
   }
   return false;
+}
+
+/**
+ * Multiply the per-tick injection rate by the product of all burst windows
+ * active at this tick. Returns 1 when no bursts are configured or active.
+ */
+function computeBurstMultiplier(
+  bursts: Workload["bursts"],
+  tick: number,
+): number {
+  if (!bursts || bursts.length === 0) return 1;
+  let mult = 1;
+  for (const b of bursts) {
+    if (tick >= b.atTick && tick < b.atTick + b.durationTicks) {
+      mult *= b.multiplier;
+    }
+  }
+  return mult;
 }
 
 function buildSuccessors(diagram: Diagram): Map<string, string[]> {

@@ -7,6 +7,19 @@ import type { Rule } from "./validation";
 export interface Workload {
   requestsPerTick: number;
   ticks: number;
+  /**
+   * Optional burst windows that multiply `requestsPerTick` while active.
+   * Multiple bursts may overlap; effective multiplier is the product of all
+   * active bursts at that tick. Lets levels teach back-pressure / smoothing.
+   */
+  bursts?: Array<{
+    /** First tick (inclusive) when the burst is active. */
+    atTick: number;
+    /** Number of ticks the burst lasts. */
+    durationTicks: number;
+    /** Multiplier applied to `requestsPerTick` while active (e.g. 5 = 5x). */
+    multiplier: number;
+  }>;
 }
 
 /**
