@@ -30,10 +30,45 @@ export interface SLA {
   maxP95Latency: number;
 }
 
+/** Body block within a lesson section — short paragraphs or bullet lists. */
+export type LessonBlock =
+  | { type: "p"; text: string }
+  | { type: "bullets"; items: string[] }
+  | {
+      /** Highlighted callout box. `tone` controls the color band. */
+      type: "callout";
+      tone: "info" | "warn" | "success";
+      title?: string;
+      text: string;
+    };
+
+export interface LessonSection {
+  heading: string;
+  blocks: LessonBlock[];
+}
+
+/**
+ * Pre-exercise teaching content. Rendered on `/levels/[id]/lesson` before the
+ * player drops into the sandbox. Players who've already seen it skip
+ * straight to the play page (with a "📖 Concept" link to revisit).
+ */
+export interface Lesson {
+  /** One-sentence hook shown at the top under the title. */
+  tagline: string;
+  sections: LessonSection[];
+  /**
+   * Optional bottom-of-page quick-reference: short bullet list the player
+   * can scan during the exercise. Mirrors the most actionable rules of thumb.
+   */
+  cheatsheet?: string[];
+}
+
 export interface Level {
   id: string;
   title: string;
   brief: string;
+  /** Optional pre-level teaching page. */
+  lesson?: Lesson;
   /**
    * Curriculum chapter this level belongs to. Levels are grouped on the
    * levels page and chapters are unlocked in order. Defaults to "Basics"

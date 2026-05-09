@@ -57,3 +57,31 @@ export function recordAttempt(levelId: string, diagram: Diagram): ProgressMap {
   saveProgress(all);
   return all;
 }
+
+const LESSON_KEY = "flow.lessonsSeen.v1";
+
+function loadLessonsSeen(): Record<string, true> {
+  if (!isBrowser()) return {};
+  try {
+    const raw = window.localStorage.getItem(LESSON_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, true>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function hasSeenLesson(levelId: string): boolean {
+  return loadLessonsSeen()[levelId] === true;
+}
+
+export function markLessonSeen(levelId: string): void {
+  if (!isBrowser()) return;
+  const seen = loadLessonsSeen();
+  if (seen[levelId]) return;
+  seen[levelId] = true;
+  try {
+    window.localStorage.setItem(LESSON_KEY, JSON.stringify(seen));
+  } catch {
+    // ignore quota errors
+  }
+}

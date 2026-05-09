@@ -228,7 +228,26 @@ export default function PlayPage() {
               {" · "}load <strong style={{ color: "#e5e7eb" }}>~{reqPerSec.toFixed(0)} req/s</strong>
             </div>
           </div>
-          <Link href="/levels" style={{ fontSize: 12, color: "#60a5fa" }}>← All levels</Link>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+            {level.lesson && (
+              <Link
+                href={`/levels/${level.id}/lesson`}
+                style={{
+                  fontSize: 12,
+                  color: "#a78bfa",
+                  textDecoration: "none",
+                  padding: "4px 10px",
+                  borderRadius: 6,
+                  border: "1px solid rgba(167, 139, 250, 0.35)",
+                  background: "rgba(167, 139, 250, 0.08)",
+                }}
+                title="Re-read the concept lesson for this level"
+              >
+                📖 Concept
+              </Link>
+            )}
+            <Link href="/levels" style={{ fontSize: 12, color: "#60a5fa" }}>← All levels</Link>
+          </div>
         </div>
       </div>
     );

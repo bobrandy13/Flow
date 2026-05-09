@@ -1,10 +1,22 @@
 import type { Level } from "../types/level";
+import {
+  LESSON_01_HELLO_SERVER,
+  LESSON_02_PERSISTENCE,
+  LESSON_03_SCALE_OUT,
+  LESSON_04_CACHE,
+  LESSON_05_QUEUE_BURST,
+  LESSON_06_ASYNC_WRITES,
+  LESSON_07_SHARDING,
+  LESSON_08_READ_WRITE_SPLIT,
+  LESSON_09_OPEN_ENDED,
+} from "./lessons";
 
 export const LEVELS: Level[] = [
   {
     id: "01-hello-server",
     title: "Hello, Server",
     chapter: "Basics",
+    lesson: LESSON_01_HELLO_SERVER,
     brief:
       "Connect a single client to a single server so requests can be received. Your first system: a request, a response, and the wire between them.",
     allowedComponents: ["client", "server"],
@@ -24,6 +36,7 @@ export const LEVELS: Level[] = [
     id: "02-add-a-database",
     title: "Persistence Layer",
     chapter: "Basics",
+    lesson: LESSON_02_PERSISTENCE,
     brief:
       "Servers are stateless. Add a database behind your server so writes survive a restart. The client should still only talk to the server.",
     allowedComponents: ["client", "server", "database"],
@@ -43,6 +56,7 @@ export const LEVELS: Level[] = [
     id: "03-scale-with-load-balancer",
     title: "Scale Out",
     chapter: "Basics",
+    lesson: LESSON_03_SCALE_OUT,
     brief:
       "One server can't keep up. Place a load balancer in front of two servers so traffic is spread across them. The database is shared.",
     allowedComponents: ["client", "server", "database", "load_balancer"],
@@ -64,6 +78,7 @@ export const LEVELS: Level[] = [
     id: "04-add-a-cache",
     title: "Cache the Hot Path",
     chapter: "Basics",
+    lesson: LESSON_04_CACHE,
     brief:
       "Database reads are expensive. Put a cache between your servers and the database. Tune the hit rate on the cache edge.",
     allowedComponents: ["client", "server", "database", "load_balancer", "cache"],
@@ -83,6 +98,7 @@ export const LEVELS: Level[] = [
     id: "05-smooth-the-burst",
     title: "Smooth the Burst",
     chapter: "Scaling",
+    lesson: LESSON_05_QUEUE_BURST,
     brief:
       "Traffic isn't uniform — bursts will overload a synchronous service. Spread the work across multiple servers behind a load balancer, and place a queue between them and the database so spikes are absorbed instead of dropped.",
     allowedComponents: ["client", "load_balancer", "server", "queue", "database"],
@@ -110,6 +126,7 @@ export const LEVELS: Level[] = [
     id: "06-async-writes",
     title: "Async Writes",
     chapter: "Scaling",
+    lesson: LESSON_06_ASYNC_WRITES,
     brief:
       "Writes don't need a synchronous round-trip to the database — load-balance multiple servers, accept the request, queue the work, and let the database drain at its own pace. Acknowledge fast, persist eventually.",
     allowedComponents: ["client", "load_balancer", "server", "queue", "database"],
@@ -134,6 +151,7 @@ export const LEVELS: Level[] = [
     id: "07-shard-the-database",
     title: "Shard the Database",
     chapter: "Scaling",
+    lesson: LESSON_07_SHARDING,
     brief:
       "One database can't keep up. Add a load balancer in front of multiple servers, then a shard router that deterministically partitions writes across multiple databases by key. More shards = more aggregate throughput.",
     allowedComponents: ["client", "load_balancer", "server", "shard", "database"],
@@ -159,6 +177,7 @@ export const LEVELS: Level[] = [
     id: "08-read-write-split",
     title: "Read + Write Split",
     chapter: "Composition",
+    lesson: LESSON_08_READ_WRITE_SPLIT,
     brief:
       "Real systems mix reads and writes. Load-balance multiple servers, put a cache on the hot read path, and a queue in front of the database to absorb write bursts. Two patterns, one diagram.",
     allowedComponents: [
@@ -193,6 +212,7 @@ export const LEVELS: Level[] = [
     id: "09-open-ended-scale",
     title: "Open Ended",
     chapter: "Composition",
+    lesson: LESSON_09_OPEN_ENDED,
     brief:
       "Big traffic, full toolbox. There's no single right answer — combine load balancers, caches, queues, and shards however you like. The simulation is the only judge.",
     allowedComponents: [

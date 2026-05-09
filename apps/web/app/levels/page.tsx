@@ -26,6 +26,30 @@ function getServerSnapshot(): ProgressMap {
   return EMPTY;
 }
 
+const EMPTY_SEEN: Record<string, true> = {};
+let seenCachedRaw: string | null = null;
+let seenCachedSnapshot: Record<string, true> = EMPTY_SEEN;
+function subscribeSeen(cb: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", cb);
+  return () => window.removeEventListener("storage", cb);
+}
+function getSeenSnapshot(): Record<string, true> {
+  if (typeof window === "undefined") return EMPTY_SEEN;
+  const raw = window.localStorage.getItem("flow.lessonsSeen.v1");
+  if (raw === seenCachedRaw) return seenCachedSnapshot;
+  seenCachedRaw = raw;
+  try {
+    seenCachedSnapshot = raw ? (JSON.parse(raw) as Record<string, true>) : EMPTY_SEEN;
+  } catch {
+    seenCachedSnapshot = EMPTY_SEEN;
+  }
+  return seenCachedSnapshot;
+}
+function getSeenServerSnapshot(): Record<string, true> {
+  return EMPTY_SEEN;
+}
+
 const CHAPTER_ORDER: Array<NonNullable<Level["chapter"]>> = [
   "Basics",
   "Scaling",
@@ -40,6 +64,7 @@ const CHAPTER_BLURBS: Record<NonNullable<Level["chapter"]>, string> = {
 
 export default function LevelsPage() {
   const progress = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const seen = useSyncExternalStore(subscribeSeen, getSeenSnapshot, getSeenServerSnapshot);
 
   // Group levels by chapter, preserving the original level order within each.
   const byChapter = new Map<NonNullable<Level["chapter"]>, Array<{ level: Level; idx: number }>>();
@@ -88,10 +113,18 @@ export default function LevelsPage() {
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                 {levels.map(({ level, idx }) => {
                   const p = progress[level.id];
+                  // Only route to lesson when one exists AND the player
+                  // hasn't seen it. Returning players go straight to play.
+                  const lessonAvailable = !!level.lesson;
+                  const lessonSeen = !!seen[level.id];
+                  const showLessonFirst = lessonAvailable && !lessonSeen;
+                  const href = showLessonFirst
+                    ? `/levels/${level.id}/lesson`
+                    : `/levels/${level.id}/play`;
                   return (
                     <li key={level.id}>
                       <Link
-                        href={`/levels/${level.id}/play`}
+                        href={href}
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -116,7 +149,26 @@ export default function LevelsPage() {
                           {p?.completed ? "✓" : idx + 1}
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 16, fontWeight: 600 }}>{level.title}</div>
+                          <div style={{ fontSize: 16, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+                            {level.title}
+                            {showLessonFirst && (
+                              <span
+                                title="New concept — read the lesson first"
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  letterSpacing: 0.5,
+                                  padding: "1px 7px",
+                                  borderRadius: 999,
+                                  border: "1px solid rgba(167, 139, 250, 0.4)",
+                                  color: "#a78bfa",
+                                  background: "rgba(167, 139, 250, 0.08)",
+                                }}
+                              >
+                                NEW · 📖
+                              </span>
+                            )}
+                          </div>
                           <div style={{ fontSize: 13, opacity: 0.7, marginTop: 2 }}>{level.brief}</div>
                           {p?.bestMetrics && (
                             <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>
@@ -124,7 +176,7 @@ export default function LevelsPage() {
                             </div>
                           )}
                         </div>
-                        <div style={{ fontSize: 18, opacity: 0.4 }}>→</div>
+                        <div style={{ fontSize: 18, opacity: 0.4 }}>{showLessonFirst ? "📖" : "→"}</div>
                       </Link>
                     </li>
                   );
