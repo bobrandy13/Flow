@@ -1,14 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { simulateStream, type SimulationInput } from "@flow/shared/simulation/simulator";
+import type { SimulationInput } from "@flow/shared/simulation/simulator";
 import type { SimulationOutcome, TickFrame } from "@flow/shared/types/validation";
+import { simulationResultSchema } from "@flow/shared/schemas/sim";
+
+const API_BASE =
+  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_BASE_URL) ||
+  "http://localhost:4000";
 
 export interface UseSimulationResult {
   frame: TickFrame | null;
   outcome: SimulationOutcome | null;
   isRunning: boolean;
   isFinished: boolean;
+  loading: boolean;
+  error: string | null;
   /** Ticks per second target. */
   speed: number;
   setSpeed: (s: number) => void;
@@ -18,25 +25,32 @@ export interface UseSimulationResult {
 }
 
 /**
- * Drives a `simulateStream()` generator using requestAnimationFrame.
+ * Fetch-and-replay simulation driver.
  *
- * - The generator lives in a ref so it survives renders.
- * - When `input` changes (or becomes null), the run is reset.
- * - `speed` is in ticks/sec; we accumulate wall-clock dt and advance multiple
- *   ticks per frame at higher speeds so the UI never drops frames.
+ * On first `play()` for a given `input`, POSTs to `/api/simulate`, validates
+ * the response with the shared zod schema, and caches the frames+outcome in
+ * a ref. The rAF loop then walks the cached frames at the user-controlled
+ * speed. Subsequent play()/pause()/reset() within the same input identity
+ * reuse the cached blob — pausing and resuming is instant, no refetch.
  */
 export function useSimulation(input: SimulationInput | null): UseSimulationResult {
   const [frame, setFrame] = useState<TickFrame | null>(null);
   const [outcome, setOutcome] = useState<SimulationOutcome | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [speed, setSpeed] = useState(8);
 
-  const generatorRef = useRef<Generator<TickFrame, SimulationOutcome, void> | null>(null);
+  const framesRef = useRef<TickFrame[] | null>(null);
+  const outcomeRef = useRef<SimulationOutcome | null>(null);
+  const frameIndexRef = useRef(0);
+
   const rafRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number | null>(null);
   const tickAccumulatorRef = useRef(0);
   const speedRef = useRef(speed);
   const inputRef = useRef<SimulationInput | null>(input);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => { speedRef.current = speed; }, [speed]);
 
@@ -51,10 +65,18 @@ export function useSimulation(input: SimulationInput | null): UseSimulationResul
 
   const reset = useCallback(() => {
     stopRaf();
-    generatorRef.current = null;
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+    framesRef.current = null;
+    outcomeRef.current = null;
+    frameIndexRef.current = 0;
     setIsRunning(false);
     setFrame(null);
     setOutcome(null);
+    setError(null);
+    setLoading(false);
   }, [stopRaf]);
 
   // Reset whenever input identity changes.
@@ -66,11 +88,17 @@ export function useSimulation(input: SimulationInput | null): UseSimulationResul
   }, [input, reset]);
 
   // Cleanup on unmount.
-  useEffect(() => () => stopRaf(), [stopRaf]);
+  useEffect(() => {
+    return () => {
+      stopRaf();
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, [stopRaf]);
 
   const tickLoopRef = useRef<((ts: number) => void) | null>(null);
   const tickLoop = useCallback((ts: number) => {
-    if (!generatorRef.current) {
+    const frames = framesRef.current;
+    if (!frames) {
       stopRaf();
       setIsRunning(false);
       return;
@@ -82,46 +110,88 @@ export function useSimulation(input: SimulationInput | null): UseSimulationResul
 
     let lastFrame: TickFrame | null = null;
     let finished = false;
-    let finalOutcome: SimulationOutcome | null = null;
-    // Cap ticks per RAF to avoid pathological catch-up loops.
     const maxStepsThisFrame = Math.max(1, Math.ceil(speedRef.current));
     let steps = 0;
-    while (tickAccumulatorRef.current >= 1 && steps < maxStepsThisFrame) {
-      const result = generatorRef.current.next();
+    while (
+      tickAccumulatorRef.current >= 1 &&
+      steps < maxStepsThisFrame &&
+      frameIndexRef.current < frames.length
+    ) {
+      lastFrame = frames[frameIndexRef.current];
+      frameIndexRef.current += 1;
       tickAccumulatorRef.current -= 1;
       steps += 1;
-      if (result.done) {
-        finalOutcome = result.value;
-        finished = true;
-        break;
-      }
-      lastFrame = result.value;
+    }
+    if (frameIndexRef.current >= frames.length) {
+      finished = true;
     }
 
     if (lastFrame) setFrame(lastFrame);
     if (finished) {
-      setOutcome(finalOutcome);
+      setOutcome(outcomeRef.current);
       setIsRunning(false);
       stopRaf();
-      generatorRef.current = null;
       return;
     }
     rafRef.current = requestAnimationFrame(tickLoopRef.current!);
   }, [stopRaf]);
   useEffect(() => { tickLoopRef.current = tickLoop; }, [tickLoop]);
 
-  const play = useCallback(() => {
-    if (!input) return;
-    if (isRunning) return;
-    if (!generatorRef.current) {
-      generatorRef.current = simulateStream(input);
-      setOutcome(null);
-    }
+  const startReplay = useCallback(() => {
+    if (!framesRef.current) return;
     setIsRunning(true);
     lastTimestampRef.current = null;
     tickAccumulatorRef.current = 0;
     rafRef.current = requestAnimationFrame(tickLoopRef.current!);
-  }, [input, isRunning]);
+  }, []);
+
+  const fetchAndReplay = useCallback(async (currentInput: SimulationInput) => {
+    setLoading(true);
+    setError(null);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    try {
+      const res = await fetch(`${API_BASE}/api/simulate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(currentInput),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Simulate failed (${res.status}): ${text || res.statusText}`);
+      }
+      const json = await res.json();
+      const parsed = simulationResultSchema.parse(json);
+      // The wire schema infers structurally-identical shapes to the engine
+      // types, but with looser config typing — cast at the boundary.
+      framesRef.current = parsed.frames as unknown as TickFrame[];
+      outcomeRef.current = parsed.outcome as unknown as SimulationOutcome;
+      frameIndexRef.current = 0;
+      setLoading(false);
+      startReplay();
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      setLoading(false);
+      setError(err instanceof Error ? err.message : "Unknown error");
+    }
+  }, [startReplay]);
+
+  const play = useCallback(() => {
+    if (!input) return;
+    if (isRunning || loading) return;
+    if (framesRef.current) {
+      // Replay cached frames. If we're at the end already, restart.
+      if (frameIndexRef.current >= framesRef.current.length) {
+        frameIndexRef.current = 0;
+        setOutcome(null);
+        setFrame(null);
+      }
+      startReplay();
+      return;
+    }
+    void fetchAndReplay(input);
+  }, [input, isRunning, loading, fetchAndReplay, startReplay]);
 
   const pause = useCallback(() => {
     stopRaf();
@@ -133,6 +203,8 @@ export function useSimulation(input: SimulationInput | null): UseSimulationResul
     outcome,
     isRunning,
     isFinished: outcome != null,
+    loading,
+    error,
     speed,
     setSpeed,
     play,

@@ -24,14 +24,17 @@ describe("simulationInputSchema", () => {
   });
 
   it("rejects unknown component kinds", () => {
-    const bad = validInput();
-    // @ts-expect-error intentional
+    const bad = validInput() as unknown as {
+      diagram: { nodes: { kind: string }[] };
+    };
     bad.diagram.nodes[1].kind = "loadbalancer";
     expect(() => simulationInputSchema.parse(bad)).toThrow();
   });
 
   it("rejects out-of-range cacheHitRate", () => {
-    const bad = validInput();
+    const bad = validInput() as unknown as {
+      diagram: { edges: Record<string, unknown>[] };
+    };
     bad.diagram.edges[0] = { ...bad.diagram.edges[0], cacheHitRate: 1.5 };
     expect(() => simulationInputSchema.parse(bad)).toThrow();
   });
@@ -59,10 +62,11 @@ describe("simulationInputSchema", () => {
   });
 
   it("rejects extra fields in node config (strict)", () => {
-    const bad = validInput();
+    const bad = validInput() as unknown as {
+      diagram: { nodes: Record<string, unknown>[] };
+    };
     bad.diagram.nodes[1] = {
       ...bad.diagram.nodes[1],
-      // @ts-expect-error intentional unknown field
       config: { fanOut: "round_robin", evilField: 42 },
     };
     expect(() => simulationInputSchema.parse(bad)).toThrow();

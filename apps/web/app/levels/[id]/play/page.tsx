@@ -180,9 +180,11 @@ export default function PlayPage() {
         onRunSimulation={handleRunSimulation}
         isSimulating={sim.isRunning}
       />
-      {(sim.isRunning || sim.frame) && (
+      {(sim.isRunning || sim.frame || sim.loading || sim.error) && (
         <div style={simBarStyle}>
-          {sim.isRunning ? (
+          {sim.loading ? (
+            <span style={{ fontSize: 12, opacity: 0.85 }}>⏳ Computing simulation…</span>
+          ) : sim.isRunning ? (
             <button onClick={sim.pause} style={pillBtn}>⏸ Pause</button>
           ) : (
             <button onClick={sim.play} style={pillBtn} disabled={sim.isFinished}>▶ Play</button>
@@ -206,6 +208,27 @@ export default function PlayPage() {
           {sim.frame && (
             <span style={{ fontSize: 12, opacity: 0.75 }}>
               tick {sim.frame.tick} · {sim.frame.phase}
+            </span>
+          )}
+          {sim.error && (
+            <span
+              role="alert"
+              style={{
+                fontSize: 12,
+                color: "#ef4444",
+                background: "rgba(239,68,68,0.1)",
+                border: "1px solid rgba(239,68,68,0.4)",
+                borderRadius: 4,
+                padding: "2px 8px",
+              }}
+            >
+              ⚠ {sim.error}{" "}
+              <button
+                onClick={() => { sim.reset(); sim.play(); }}
+                style={{ ...pillBtn, padding: "2px 8px", fontSize: 11, marginLeft: 6 }}
+              >
+                Retry
+              </button>
             </span>
           )}
           <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14, fontSize: 11, opacity: 0.85, flexWrap: "wrap" }}>
