@@ -70,6 +70,26 @@ export const COMPONENT_SPECS: Record<ComponentKind, ComponentSpec & { color: str
     color: "#06b6d4",
     emoji: "🔀",
   },
+  rate_limiter: {
+    kind: "rate_limiter",
+    label: "Rate Limiter",
+    baseLatency: 1,
+    jitter: 0,
+    // High concurrency for the brief admit-or-drop check; the *real* limit
+    // is the token bucket, refilled per-tick by the simulator.
+    capacity: 1000,
+    color: "#facc15",
+    emoji: "🚦",
+  },
+  circuit_breaker: {
+    kind: "circuit_breaker",
+    label: "Circuit Breaker",
+    baseLatency: 1,
+    jitter: 0,
+    capacity: 1000,
+    color: "#f87171",
+    emoji: "🔌",
+  },
 };
 
 export const DEFAULT_FAN_OUT: FanOutPolicy = "round_robin";

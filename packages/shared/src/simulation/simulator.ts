@@ -43,6 +43,15 @@ interface NodeRuntime {
   /** Set true when a scheduled failure window covers the current tick.
    *  Failed nodes refuse new admissions and (Stage 3) drop in-flight work. */
   isFailed?: boolean;
+  /** Rate-limiter token bucket. Refilled per-tick, consumed per admission. */
+  tokens?: number;
+  /** Circuit-breaker state machine. */
+  breakerState?: "closed" | "open" | "half_open";
+  /** Tick at which the breaker last opened (used to time cooldowns). */
+  breakerOpenedAtTick?: number;
+  /** Recent ticks' (success, drop) tuples for the rolling window. Index 0 is
+   *  the oldest, length capped at the configured windowTicks. */
+  breakerWindow?: Array<{ ok: number; bad: number }>;
 }
 
 interface DeferredQueueItem {
@@ -99,7 +108,7 @@ export function* simulateStream(
 
   const runtimes = new Map<string, NodeRuntime>();
   for (const node of diagram.nodes) {
-    runtimes.set(node.id, {
+    const rt: NodeRuntime = {
       node,
       inFlight: 0,
       peakInFlight: 0,
@@ -109,7 +118,16 @@ export function* simulateStream(
       droppedThisTick: 0,
       pending: [],
       peakPendingDepth: 0,
-    });
+    };
+    if (node.kind === "rate_limiter") {
+      const cfg = (node.config as { bucketSize?: number } | undefined) ?? {};
+      rt.tokens = cfg.bucketSize ?? 60;
+    }
+    if (node.kind === "circuit_breaker") {
+      rt.breakerState = "closed";
+      rt.breakerWindow = [];
+    }
+    runtimes.set(node.id, rt);
   }
 
   const successors = buildSuccessors(diagram);
@@ -157,6 +175,32 @@ export function* simulateStream(
   // Round-robin cursors per node id.
   const rrCursor = new Map<string, number>();
 
+  // Resolve scheduled failures (Stage 3 — failure injection). Each entry maps
+  // to a single nodeId determined at sim start, plus its tick window.
+  interface ResolvedFailure { nodeId: string; startTick: number; endTick: number; }
+  const resolvedFailures: ResolvedFailure[] = [];
+  for (const f of workload.failures ?? []) {
+    const matches = diagram.nodes.filter(
+      (n) => n.kind === f.target.kind && (!f.target.role || n.role === f.target.role),
+    );
+    const idx = f.target.index ?? 0;
+    const picked = matches[idx];
+    if (!picked) continue; // no-op when target doesn't match (deliberate)
+    resolvedFailures.push({
+      nodeId: picked.id,
+      startTick: f.atTick,
+      endTick: f.atTick + f.durationTicks,
+    });
+  }
+  /** Returns true when nodeId is inside any active failure window for `tick`. */
+  function isNodeFailedAtTick(nodeId: string, tick: number): boolean {
+    for (const f of resolvedFailures) {
+      if (f.nodeId !== nodeId) continue;
+      if (tick >= f.startTick && tick < f.endTick) return true;
+    }
+    return false;
+  }
+
   const inFlight: InFlightRequest[] = [];
   const completed: CompletedRequest[] = [];
   let nextRequestId = 1;
@@ -172,10 +216,62 @@ export function* simulateStream(
     const injecting = tick < workload.ticks;
     if (!injecting && inFlight.length === 0 && !hasPendingWork(runtimes)) break;
 
-    // reset per-tick counters
+    // reset per-tick counters and refresh per-node failure flags
     for (const rt of runtimes.values()) {
       rt.servedThisTick = 0;
       rt.droppedThisTick = 0;
+      rt.isFailed = isNodeFailedAtTick(rt.node.id, tick);
+      // Token-bucket refill for rate limiters (Stage 4).
+      if (rt.node.kind === "rate_limiter") {
+        const cfg = (rt.node.config as { tokensPerTick?: number; bucketSize?: number } | undefined) ?? {};
+        const refill = cfg.tokensPerTick ?? 30;
+        const cap = cfg.bucketSize ?? 60;
+        rt.tokens = Math.min(cap, (rt.tokens ?? cap) + refill);
+      }
+      // Circuit-breaker bookkeeping (Stage 5). Append the previous tick's
+      // downstream result to the rolling window, then re-evaluate state.
+      if (rt.node.kind === "circuit_breaker") {
+        const cfg = (rt.node.config as
+          | { failureRateThreshold?: number; windowTicks?: number; cooldownTicks?: number }
+          | undefined) ?? {};
+        const threshold = cfg.failureRateThreshold ?? 0.5;
+        const windowTicks = cfg.windowTicks ?? 10;
+        const cooldown = cfg.cooldownTicks ?? 20;
+        const downIds = successors.get(rt.node.id) ?? [];
+        // Aggregate downstream's served/dropped *last tick* across all picks.
+        let ok = 0;
+        let bad = 0;
+        for (const id of downIds) {
+          const drt = runtimes.get(id);
+          if (!drt) continue;
+          ok += drt.servedThisTick;
+          bad += drt.droppedThisTick;
+        }
+        const win = (rt.breakerWindow ??= []);
+        win.push({ ok, bad });
+        while (win.length > windowTicks) win.shift();
+        const totalOk = win.reduce((s, e) => s + e.ok, 0);
+        const totalBad = win.reduce((s, e) => s + e.bad, 0);
+        const total = totalOk + totalBad;
+        const rate = total > 0 ? totalBad / total : 0;
+        const prevState = rt.breakerState ?? "closed";
+        if (prevState === "closed" && total >= 3 && rate >= threshold) {
+          rt.breakerState = "open";
+          rt.breakerOpenedAtTick = tick;
+        } else if (prevState === "open" && rt.breakerOpenedAtTick !== undefined && tick - rt.breakerOpenedAtTick >= cooldown) {
+          rt.breakerState = "half_open";
+        } else if (prevState === "half_open") {
+          // After a probe tick: if the most recent tick had no failures, close.
+          const last = win[win.length - 1];
+          if (last && last.bad === 0 && last.ok > 0) {
+            rt.breakerState = "closed";
+            rt.breakerWindow = [];
+          } else if (last && last.bad > 0) {
+            rt.breakerState = "open";
+            rt.breakerOpenedAtTick = tick;
+          }
+        }
+      }
     }
     const transitionsThisTick: EdgeTransition[] = [];
 
@@ -267,6 +363,17 @@ export function* simulateStream(
               // on the queue node so the bottleneck explainer fingers it.
               nextRt.totalDropped += 1;
               nextRt.droppedThisTick += 1;
+              // Stage 6 — DLQ: if the queue has an outgoing edge marked
+              // `dlq: true`, route the overflow message to that target. The
+              // producer still sees the drop (we never ACK'd), but the message
+              // is preserved on the DLQ side for audit/replay.
+              const dlqEdge = diagram.edges.find(
+                (e) => e.fromNodeId === next && e.dlq === true,
+              );
+              if (dlqEdge) {
+                recordTransition(next, dlqEdge.toNodeId, "forward", transitionsThisTick);
+                admit(dlqEdge.toNodeId, tick, [next, dlqEdge.toNodeId], "forward", tick, true);
+              }
               completed.push({ startTick: req.startTick, endTick: tick, succeeded: false });
               continue;
             }
@@ -403,6 +510,51 @@ export function* simulateStream(
   ) {
     const rt = runtimes.get(nodeId);
     if (!rt) return;
+    // Failed nodes refuse new admissions. The arrival is treated like a
+    // capacity drop: failure shows up as elevated drop counts on the node.
+    if (rt.isFailed) {
+      rt.totalDropped += 1;
+      rt.droppedThisTick += 1;
+      if (!asyncOrigin) {
+        completed.push({ startTick, endTick: nowTick, succeeded: false });
+      }
+      return;
+    }
+    // Rate-limiter admission (Stage 4): consume one token or drop. Only on
+    // forward direction — return-path traffic is already accounted for.
+    if (rt.node.kind === "rate_limiter" && direction === "forward") {
+      if ((rt.tokens ?? 0) <= 0) {
+        rt.totalDropped += 1;
+        rt.droppedThisTick += 1;
+        if (!asyncOrigin) {
+          completed.push({ startTick, endTick: nowTick, succeeded: false });
+        }
+        return;
+      }
+      rt.tokens! -= 1;
+    }
+    // Circuit-breaker admission (Stage 5): if open, fast-fail. If half-open,
+    // allow ONE probe per cooldown by checking served/dropped this tick.
+    if (rt.node.kind === "circuit_breaker" && direction === "forward") {
+      const state = rt.breakerState ?? "closed";
+      if (state === "open") {
+        rt.totalDropped += 1;
+        rt.droppedThisTick += 1;
+        if (!asyncOrigin) {
+          completed.push({ startTick, endTick: nowTick, succeeded: false });
+        }
+        return;
+      }
+      if (state === "half_open" && (rt.servedThisTick + rt.droppedThisTick) > 0) {
+        // Already sent the probe this tick — fast-fail the rest.
+        rt.totalDropped += 1;
+        rt.droppedThisTick += 1;
+        if (!asyncOrigin) {
+          completed.push({ startTick, endTick: nowTick, succeeded: false });
+        }
+        return;
+      }
+    }
     const cap = rt.node.kind === "client"
       ? Number.POSITIVE_INFINITY
       : COMPONENT_SPECS[rt.node.kind].capacity;

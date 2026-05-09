@@ -10,6 +10,8 @@ export const COMPONENT_KINDS = [
   "load_balancer",
   "queue",
   "shard",
+  "rate_limiter",
+  "circuit_breaker",
 ] as const;
 
 export type ComponentKind = (typeof COMPONENT_KINDS)[number];
@@ -48,4 +50,16 @@ export interface LoadBalancerConfig {
 /** Discriminated union of node-kind-specific config. Extend as new kinds gain knobs. */
 export type NodeConfig =
   | { kind: "load_balancer"; config: LoadBalancerConfig }
-  | { kind: "queue"; config: { bufferSize: number } };
+  | { kind: "queue"; config: { bufferSize: number } }
+  | { kind: "rate_limiter"; config: { tokensPerTick: number; bucketSize: number } }
+  | {
+      kind: "circuit_breaker";
+      config: {
+        /** Drop ratio over the recent window above which the breaker opens. */
+        failureRateThreshold: number;
+        /** Sliding-window length in ticks the breaker uses for the ratio. */
+        windowTicks: number;
+        /** Ticks the breaker stays open before allowing a half-open probe. */
+        cooldownTicks: number;
+      };
+    };

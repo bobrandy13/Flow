@@ -206,6 +206,89 @@ const expectedDesigns: Record<string, Diagram> = {
       { id: "e16", fromNodeId: "s2", toNodeId: "c" },
     ],
   },
+  "10-replicate-and-failover": {
+    nodes: [
+      { id: "c", kind: "client", position: { x: 0, y: 0 } },
+      { id: "s", kind: "server", position: { x: 200, y: 0 } },
+      {
+        id: "db1",
+        kind: "database",
+        position: { x: 400, y: -50 },
+        replicaGroupId: "g1",
+        role: "primary",
+      },
+      {
+        id: "db2",
+        kind: "database",
+        position: { x: 400, y: 50 },
+        replicaGroupId: "g1",
+        role: "replica",
+      },
+    ],
+    edges: [
+      { id: "e1", fromNodeId: "c", toNodeId: "s" },
+      { id: "e2", fromNodeId: "s", toNodeId: "db1" },
+      { id: "e3", fromNodeId: "db1", toNodeId: "s" },
+      { id: "e4", fromNodeId: "s", toNodeId: "c" },
+    ],
+  },
+  "11-tame-the-spike": {
+    nodes: [
+      { id: "c", kind: "client", position: { x: 0, y: 0 } },
+      {
+        id: "rl",
+        kind: "rate_limiter",
+        position: { x: 200, y: 0 },
+        config: { tokensPerTick: 10, bucketSize: 20 },
+      },
+      { id: "s", kind: "server", position: { x: 400, y: 0 } },
+      { id: "d", kind: "database", position: { x: 600, y: 0 } },
+    ],
+    edges: [
+      { id: "e1", fromNodeId: "c", toNodeId: "rl" },
+      { id: "e2", fromNodeId: "rl", toNodeId: "s" },
+      { id: "e3", fromNodeId: "s", toNodeId: "d" },
+      { id: "e4", fromNodeId: "s", toNodeId: "rl" },
+      { id: "e5", fromNodeId: "rl", toNodeId: "c" },
+    ],
+  },
+  "12-trip-the-breaker": {
+    nodes: [
+      { id: "c", kind: "client", position: { x: 0, y: 0 } },
+      { id: "s", kind: "server", position: { x: 200, y: 0 } },
+      {
+        id: "cb",
+        kind: "circuit_breaker",
+        position: { x: 400, y: 0 },
+        config: { failureRateThreshold: 0.3, windowTicks: 6, cooldownTicks: 25 },
+      },
+      { id: "d", kind: "database", position: { x: 600, y: 0 } },
+    ],
+    edges: [
+      { id: "e1", fromNodeId: "c", toNodeId: "s" },
+      { id: "e2", fromNodeId: "s", toNodeId: "cb" },
+      { id: "e3", fromNodeId: "cb", toNodeId: "d" },
+      { id: "e4", fromNodeId: "d", toNodeId: "cb" },
+      { id: "e5", fromNodeId: "cb", toNodeId: "s" },
+      { id: "e6", fromNodeId: "s", toNodeId: "c" },
+    ],
+  },
+  "13-letters-that-wouldnt-send": {
+    nodes: [
+      { id: "c", kind: "client", position: { x: 0, y: 0 } },
+      { id: "s", kind: "server", position: { x: 200, y: 0 } },
+      { id: "q", kind: "queue", position: { x: 400, y: 0 } },
+      { id: "d", kind: "database", position: { x: 600, y: -50 } },
+      { id: "dlq", kind: "database", position: { x: 600, y: 50 } },
+    ],
+    edges: [
+      { id: "e1", fromNodeId: "c", toNodeId: "s" },
+      { id: "e2", fromNodeId: "s", toNodeId: "q" },
+      { id: "e3", fromNodeId: "q", toNodeId: "d" },
+      { id: "e4", fromNodeId: "q", toNodeId: "dlq", dlq: true },
+      { id: "e5", fromNodeId: "s", toNodeId: "c" },
+    ],
+  },
 };
 
 describe("level solvability", () => {

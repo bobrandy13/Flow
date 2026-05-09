@@ -418,3 +418,164 @@ export const LESSON_09_OPEN_ENDED: Lesson = {
     "Copy your logs and read them. The sim tells you exactly which node is hurting.",
   ],
 };
+
+export const LESSON_10_REPLICATE_FAILOVER: Lesson = {
+  tagline: "One database is one outage waiting to happen. Replicate to survive.",
+  sections: [
+    {
+      heading: "Why replication",
+      blocks: [
+        {
+          type: "p",
+          text: "A single database is a single point of failure: when it goes down, every write and read fails with it. Replication keeps copies of the same data on multiple nodes so reads can keep flowing — and (with promotion) writes too — when one node disappears.",
+        },
+        {
+          type: "p",
+          text: "In Flow, click a database in the inspector and press Replicate. The original becomes the primary; new ones are replicas. They share a 🔗 group badge. Reads spread across the group; writes go to the primary.",
+        },
+      ],
+    },
+    {
+      heading: "What you get (and what you don't)",
+      blocks: [
+        {
+          type: "bullets",
+          items: [
+            "Aggregate read capacity = sum of all healthy members.",
+            "If the primary fails, replicas keep serving reads — your app stays partially up.",
+            "Writes still go to the primary, so during a primary outage they fail. Promotion (a replica becomes the new primary) is a follow-up topic.",
+            "Replication isn't free: every write has to propagate. There's lag.",
+          ],
+        },
+        {
+          type: "callout",
+          tone: "info",
+          title: "This level: scheduled outage",
+          text: "The primary database fails for a window mid-simulation. Without replicas, success rate craters. With replicas, reads continue and your SLA holds.",
+        },
+      ],
+    },
+  ],
+  cheatsheet: [
+    "Replicate any database that holds important reads — even just one extra copy buys you survivability.",
+    "Replication ≠ free. Lag means a replica might serve a slightly older value.",
+  ],
+};
+
+export const LESSON_11_RATE_LIMITER: Lesson = {
+  tagline: "When you can't scale fast enough, throttle the firehose.",
+  sections: [
+    {
+      heading: "What a rate limiter does",
+      blocks: [
+        {
+          type: "p",
+          text: "A rate limiter caps how fast traffic flows downstream. The most common implementation is a token bucket: tokens refill at a fixed rate (say, 30 per tick), each request takes one, and arrivals with no token are rejected immediately. The bucket size lets short bursts squeak through; sustained overload is throttled.",
+        },
+      ],
+    },
+    {
+      heading: "Tokens vs bucket size",
+      blocks: [
+        {
+          type: "bullets",
+          items: [
+            "tokensPerTick = sustained rate. This is what your downstream can survive.",
+            "bucketSize = burst tolerance. Higher = more headroom for spiky traffic.",
+            "Drops here are intentional — they protect what's behind them.",
+          ],
+        },
+        {
+          type: "callout",
+          tone: "warn",
+          title: "Match the limit to the bottleneck",
+          text: "Set tokensPerTick a little under what the protected service can handle. Too high and the limiter is decorative; too low and you're rejecting traffic that could have succeeded.",
+        },
+      ],
+    },
+  ],
+  cheatsheet: [
+    "Token bucket: refill = sustained rate, bucket = burst tolerance.",
+    "Use it in front of a service that can't scale (third-party API, fragile downstream, expensive op).",
+  ],
+};
+
+export const LESSON_12_CIRCUIT_BREAKER: Lesson = {
+  tagline: "When the downstream is broken, fail fast — don't pile on.",
+  sections: [
+    {
+      heading: "The cascading-failure problem",
+      blocks: [
+        {
+          type: "p",
+          text: "When a downstream slows down or starts failing, naive callers keep sending requests, hold connections waiting for responses that never come, and run out of resources themselves. One failing service brings down everything that depends on it.",
+        },
+      ],
+    },
+    {
+      heading: "How a circuit breaker helps",
+      blocks: [
+        {
+          type: "p",
+          text: "A circuit breaker watches the recent error rate to a downstream. Three states: closed (normal), open (downstream is broken — reject immediately), half-open (cooldown elapsed, send one probe). Successful probe → closed. Failed probe → back to open.",
+        },
+        {
+          type: "bullets",
+          items: [
+            "failureRateThreshold: drop ratio above which the breaker opens.",
+            "windowTicks: how long a slice of recent history to consider.",
+            "cooldownTicks: how long to stay open before probing again.",
+          ],
+        },
+        {
+          type: "callout",
+          tone: "success",
+          title: "The point isn't fewer drops",
+          text: "When the downstream is down, drops are inevitable. The point is freeing your callers fast — they get an error in milliseconds instead of a hung connection.",
+        },
+      ],
+    },
+  ],
+  cheatsheet: [
+    "Closed → open when error rate spikes; cooldown; half-open probe; success closes it.",
+    "Pair with retries and timeouts. The breaker prevents the retries from making things worse.",
+  ],
+};
+
+export const LESSON_13_DLQ: Lesson = {
+  tagline: "Don't drop poison messages on the floor — keep them for later.",
+  sections: [
+    {
+      heading: "The problem with silent drops",
+      blocks: [
+        {
+          type: "p",
+          text: "When a queue overflows, the simplest behavior is to drop new arrivals. But silent drops are a debugging nightmare: you can't see what was lost, can't replay it, and may not even know it happened.",
+        },
+      ],
+    },
+    {
+      heading: "What a DLQ does",
+      blocks: [
+        {
+          type: "p",
+          text: "A dead-letter queue is a side-channel for messages that couldn't be processed. Overflows, poison pills, repeated failures — they all land here instead of being lost. Operators inspect, fix, and replay them.",
+        },
+        {
+          type: "p",
+          text: "In Flow, draw an edge from a queue to a target node, click the edge, and tick \"Dead-letter queue\". When the queue overflows, those messages land at the DLQ target instead of vanishing.",
+        },
+        {
+          type: "callout",
+          tone: "info",
+          title: "DLQ is observability",
+          text: "Even if you never replay anything from the DLQ, having it means you can answer 'how much did we drop and why?' — which beats 'I don't know' every time.",
+        },
+      ],
+    },
+  ],
+  cheatsheet: [
+    "Mark a queue's overflow edge as DLQ to keep failed messages.",
+    "DLQ depth is a key alert signal — a growing DLQ means something is broken upstream.",
+  ],
+};

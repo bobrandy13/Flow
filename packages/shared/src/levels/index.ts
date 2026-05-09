@@ -9,6 +9,10 @@ import {
   LESSON_07_SHARDING,
   LESSON_08_READ_WRITE_SPLIT,
   LESSON_09_OPEN_ENDED,
+  LESSON_10_REPLICATE_FAILOVER,
+  LESSON_11_RATE_LIMITER,
+  LESSON_12_CIRCUIT_BREAKER,
+  LESSON_13_DLQ,
 } from "./lessons";
 
 export const LEVELS: Level[] = [
@@ -237,6 +241,99 @@ export const LEVELS: Level[] = [
       },
       sla: { minSuccessRate: 0.85, maxP95Latency: 100 },
       seed: 9,
+    },
+  },
+  {
+    id: "10-replicate-and-failover",
+    title: "Replicate & Failover",
+    chapter: "Reliability",
+    lesson: LESSON_10_REPLICATE_FAILOVER,
+    brief:
+      "Mid-run, the database fails for a while. A single DB topology will lose every request during that window. Replicate the database so reads survive the outage.",
+    allowedComponents: ["client", "server", "database"],
+    maxOf: { client: 1, server: 2, database: 3 },
+    rules: [
+      { type: "requires_kind", kind: "database", min: 2 },
+      { type: "requires_path", from: "client", to: "server" },
+      { type: "requires_path", from: "server", to: "database" },
+    ],
+    simulation: {
+      workload: {
+        requestsPerTick: 8,
+        ticks: 80,
+        failures: [{ atTick: 20, durationTicks: 25, target: { kind: "database" } }],
+      },
+      sla: { minSuccessRate: 0.6, maxP95Latency: 100 },
+      seed: 10,
+    },
+  },
+  {
+    id: "11-tame-the-spike",
+    title: "Tame the Spike",
+    chapter: "Reliability",
+    lesson: LESSON_11_RATE_LIMITER,
+    brief:
+      "Bursty traffic overwhelms the downstream server. Insert a rate limiter to throttle arrivals at a sustainable rate; the limiter drops the excess so the server stays healthy.",
+    allowedComponents: ["client", "rate_limiter", "server", "database"],
+    maxOf: { client: 1, rate_limiter: 1, server: 1, database: 1 },
+    rules: [
+      { type: "requires_kind", kind: "rate_limiter", min: 1 },
+      { type: "requires_path", from: "client", to: "rate_limiter" },
+      { type: "requires_path", from: "rate_limiter", to: "server" },
+    ],
+    simulation: {
+      workload: {
+        requestsPerTick: 8,
+        ticks: 80,
+        bursts: [{ atTick: 20, durationTicks: 15, multiplier: 6 }],
+      },
+      sla: { minSuccessRate: 0.45, maxP95Latency: 100 },
+      seed: 11,
+    },
+  },
+  {
+    id: "12-trip-the-breaker",
+    title: "Trip the Breaker",
+    chapter: "Reliability",
+    lesson: LESSON_12_CIRCUIT_BREAKER,
+    brief:
+      "The database goes flaky for a window. Without a circuit breaker, the server's connection pool fills with hung requests. Insert a breaker so failures fast-fail and the server stays responsive.",
+    allowedComponents: ["client", "server", "circuit_breaker", "database"],
+    maxOf: { client: 1, server: 1, circuit_breaker: 1, database: 1 },
+    rules: [
+      { type: "requires_kind", kind: "circuit_breaker", min: 1 },
+      { type: "requires_path", from: "server", to: "circuit_breaker" },
+      { type: "requires_path", from: "circuit_breaker", to: "database" },
+    ],
+    simulation: {
+      workload: {
+        requestsPerTick: 6,
+        ticks: 100,
+        failures: [{ atTick: 20, durationTicks: 30, target: { kind: "database" } }],
+      },
+      sla: { minSuccessRate: 0.35, maxP95Latency: 100 },
+      seed: 12,
+    },
+  },
+  {
+    id: "13-letters-that-wouldnt-send",
+    title: "Letters that Wouldn't Send",
+    chapter: "Reliability",
+    lesson: LESSON_13_DLQ,
+    brief:
+      "Heavy write load to a slow consumer overflows the queue and you can't tell what was lost. Wire a dead-letter queue from the queue's overflow path to a database for later inspection.",
+    allowedComponents: ["client", "server", "queue", "database"],
+    maxOf: { client: 1, server: 1, queue: 1, database: 2 },
+    rules: [
+      { type: "requires_kind", kind: "queue", min: 1 },
+      { type: "requires_kind", kind: "database", min: 2 },
+      { type: "requires_path", from: "server", to: "queue" },
+      { type: "requires_path", from: "queue", to: "database" },
+    ],
+    simulation: {
+      workload: { requestsPerTick: 12, ticks: 60 },
+      sla: { minSuccessRate: 0.5, maxP95Latency: 100 },
+      seed: 13,
     },
   },
 ];

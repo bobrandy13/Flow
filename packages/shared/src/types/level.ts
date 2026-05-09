@@ -20,6 +20,23 @@ export interface Workload {
     /** Multiplier applied to `requestsPerTick` while active (e.g. 5 = 5x). */
     multiplier: number;
   }>;
+  /**
+   * Scheduled failures: deterministic per-level outage windows. The simulator
+   * resolves each `target` to a single node at sim start; while the window
+   * is active, that node refuses new admissions (counted as drops) and any
+   * in-flight work at it ages out. Used to teach replication / failover and
+   * circuit-breakers. No-op (silent) if the target doesn't match any node.
+   */
+  failures?: Array<{
+    atTick: number;
+    durationTicks: number;
+    target: {
+      kind: ComponentKind;
+      role?: "primary" | "replica";
+      /** Index into the matching nodes when multiple match. Default 0. */
+      index?: number;
+    };
+  }>;
 }
 
 /**
@@ -74,7 +91,7 @@ export interface Level {
    * levels page and chapters are unlocked in order. Defaults to "Basics"
    * when unset.
    */
-  chapter?: "Basics" | "Scaling" | "Composition";
+  chapter?: "Basics" | "Scaling" | "Composition" | "Reliability";
   /** Components the player is allowed to place from the palette. */
   allowedComponents: ComponentKind[];
   /** Optional cap on count per kind. */

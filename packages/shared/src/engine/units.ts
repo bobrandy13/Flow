@@ -107,6 +107,18 @@ export const KIND_EXPLAINERS: Record<ComponentKind, KindExplainer> = {
       "A shard router splits traffic deterministically: the same request id always lands on the same downstream. This lets you scale past a single database's limits — each shard owns a slice of the keyspace and runs at its own capacity. Trade-off: queries that span shards need a separate aggregation step.",
     analogy: "Think: assigning library books by author surname. A–F to one shelf, G–M to another. Anyone searching always knows which shelf to check.",
   },
+  rate_limiter: {
+    one_liner: "Caps how fast traffic can flow downstream.",
+    what_it_does:
+      "A rate limiter uses a token bucket: tokens refill at a fixed rate, each request consumes one, and arrivals with no token are dropped. This protects a fragile downstream from being overwhelmed during bursts and forces backpressure on the producer.",
+    analogy: "Think: a turnstile that only lets a fixed number of people through per minute.",
+  },
+  circuit_breaker: {
+    one_liner: "Fails fast when a downstream is broken.",
+    what_it_does:
+      "A circuit breaker watches the recent error rate to its downstream. If the rate climbs above a threshold, the breaker 'opens' and rejects new requests immediately instead of waiting for them to time out. After a cooldown it half-opens, sends a probe, and either closes (recovered) or stays open (still broken).",
+    analogy: "Think: an electrical breaker that trips when the line is overloaded — better to disconnect than to burn the house down.",
+  },
 };
 
 /** Short explanations for the simulation result metrics. */

@@ -29,6 +29,11 @@ const nodeConfigSchema = z
   .object({
     fanOut: fanOutPolicySchema.optional(),
     bufferSize: z.number().int().nonnegative().optional(),
+    tokensPerTick: z.number().int().min(0).max(10000).optional(),
+    bucketSize: z.number().int().min(0).max(10000).optional(),
+    failureRateThreshold: z.number().min(0).max(1).optional(),
+    windowTicks: z.number().int().min(1).max(2000).optional(),
+    cooldownTicks: z.number().int().min(1).max(2000).optional(),
   })
   .strict()
   .optional();
@@ -47,6 +52,7 @@ const diagramEdgeSchema = z.object({
   fromNodeId: z.string().min(1),
   toNodeId: z.string().min(1),
   cacheHitRate: z.number().min(0).max(1).optional(),
+  dlq: z.boolean().optional(),
 });
 
 export const diagramSchema = z.object({
@@ -65,6 +71,20 @@ const workloadSchema = z.object({
         atTick: z.number().int().min(0).max(2000),
         durationTicks: z.number().int().min(1).max(2000),
         multiplier: z.number().min(0.1).max(20),
+      }),
+    )
+    .max(10)
+    .optional(),
+  failures: z
+    .array(
+      z.object({
+        atTick: z.number().int().min(0).max(2000),
+        durationTicks: z.number().int().min(1).max(2000),
+        target: z.object({
+          kind: componentKindSchema,
+          role: z.enum(["primary", "replica"]).optional(),
+          index: z.number().int().min(0).optional(),
+        }),
       }),
     )
     .max(10)

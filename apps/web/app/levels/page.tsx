@@ -54,12 +54,14 @@ const CHAPTER_ORDER: Array<NonNullable<Level["chapter"]>> = [
   "Basics",
   "Scaling",
   "Composition",
+  "Reliability",
 ];
 
 const CHAPTER_BLURBS: Record<NonNullable<Level["chapter"]>, string> = {
   Basics: "Foundations: clients, servers, persistence, scaling out, caching.",
   Scaling: "Handle bursts, decouple producers from consumers, partition by key.",
   Composition: "Combine patterns into real-world topologies. No single right answer.",
+  Reliability: "Survive failures: replicas, rate limits, circuit breakers, dead-letter queues.",
 };
 
 export default function LevelsPage() {

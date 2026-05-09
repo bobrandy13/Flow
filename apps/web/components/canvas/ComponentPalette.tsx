@@ -15,7 +15,7 @@ interface ComponentPaletteProps {
   maxOf?: Partial<Record<ComponentKind, number>>;
 }
 
-type PaletteCategory = "Compute" | "Data" | "Routing";
+type PaletteCategory = "Compute" | "Data" | "Routing" | "Reliability";
 
 const CATEGORY_OF: Record<ComponentKind, PaletteCategory> = {
   client: "Compute",
@@ -25,9 +25,11 @@ const CATEGORY_OF: Record<ComponentKind, PaletteCategory> = {
   load_balancer: "Routing",
   shard: "Routing",
   queue: "Routing",
+  rate_limiter: "Reliability",
+  circuit_breaker: "Reliability",
 };
 
-const CATEGORY_ORDER: PaletteCategory[] = ["Compute", "Routing", "Data"];
+const CATEGORY_ORDER: PaletteCategory[] = ["Compute", "Routing", "Data", "Reliability"];
 
 export function ComponentPalette({ allowed, onAdd, counts, maxOf }: ComponentPaletteProps) {
   const grouped = new Map<PaletteCategory, ComponentKind[]>();

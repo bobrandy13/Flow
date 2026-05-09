@@ -29,12 +29,17 @@ export interface DiagramNode {
  * A directed edge connecting two nodes.
  * `cacheHitRate` is only meaningful when the target node is a `cache`; the UI
  * hides the field otherwise. Value is in [0, 1].
+ *
+ * `dlq` marks this edge as the queue's dead-letter route. When set on an edge
+ * whose `fromNodeId` is a queue, queue overflow drops route to the edge's
+ * target instead of being silently lost.
  */
 export interface DiagramEdge {
   id: string;
   fromNodeId: string;
   toNodeId: string;
   cacheHitRate?: number;
+  dlq?: boolean;
 }
 
 export interface Diagram {
