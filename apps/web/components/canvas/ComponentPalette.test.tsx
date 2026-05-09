@@ -43,4 +43,23 @@ describe("ComponentPalette drag-and-drop", () => {
     fireEvent.click(screen.getByRole("button", { name: /database/i }));
     expect(onAdd).toHaveBeenCalledWith("database");
   });
+
+  it("groups items into category headers (Compute / Routing / Data)", () => {
+    render(
+      <ComponentPalette
+        allowed={["client", "server", "load_balancer", "queue", "cache", "database"]}
+        onAdd={() => {}}
+      />,
+    );
+    expect(screen.getByText("COMPUTE")).toBeTruthy();
+    expect(screen.getByText("ROUTING")).toBeTruthy();
+    expect(screen.getByText("DATA")).toBeTruthy();
+  });
+
+  it("omits a category header if no allowed kinds belong to it", () => {
+    // Only Compute kinds → no ROUTING / DATA headers.
+    render(<ComponentPalette allowed={["client", "server"]} onAdd={() => {}} />);
+    expect(screen.queryByText("ROUTING")).toBeNull();
+    expect(screen.queryByText("DATA")).toBeNull();
+  });
 });
