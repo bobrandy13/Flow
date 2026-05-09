@@ -2,35 +2,17 @@
   "name": "flow",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.33.4",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
-  "dependencies": {
-    "@xyflow/react": "^12.10.2",
-    "next": "16.2.4",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "dev": "pnpm --parallel --filter ./apps/web --filter ./apps/api dev",
+    "dev:web": "pnpm --filter @flow/web dev",
+    "dev:api": "pnpm --filter @flow/api dev",
+    "build": "pnpm -r --filter './apps/*' build",
+    "lint": "pnpm -r --filter './apps/*' --filter './packages/*' lint",
+    "typecheck": "pnpm -r --filter './apps/*' --filter './packages/*' typecheck",
+    "test": "pnpm -r --filter './apps/*' --filter './packages/*' test"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.4",
-    "jsdom": "^29.1.1",
-    "tailwindcss": "^4",
-    "typescript": "^5",
-    "vitest": "^4.1.5"
+    "typescript": "^5"
   }
 }
