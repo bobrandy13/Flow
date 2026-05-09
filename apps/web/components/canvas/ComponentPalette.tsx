@@ -27,6 +27,7 @@ const CATEGORY_OF: Record<ComponentKind, PaletteCategory> = {
   queue: "Routing",
   rate_limiter: "Reliability",
   circuit_breaker: "Reliability",
+  cdn: "Routing",
 };
 
 const CATEGORY_ORDER: PaletteCategory[] = ["Compute", "Routing", "Data", "Reliability"];

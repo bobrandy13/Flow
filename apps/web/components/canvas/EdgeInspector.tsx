@@ -13,7 +13,7 @@ export function EdgeInspector({ diagram, selectedEdgeId, onChange }: EdgeInspect
   if (!edge) return null;
   const sourceKind = diagram.nodes.find((n) => n.id === edge.fromNodeId)?.kind;
   const targetKind = diagram.nodes.find((n) => n.id === edge.toNodeId)?.kind;
-  const isCacheEdge = targetKind === "cache";
+  const isCacheEdge = targetKind === "cache" || targetKind === "cdn";
   const isQueueEdge = sourceKind === "queue";
   if (!isCacheEdge && !isQueueEdge) return null;
 
@@ -21,7 +21,9 @@ export function EdgeInspector({ diagram, selectedEdgeId, onChange }: EdgeInspect
     <div style={panelStyle}>
       {isCacheEdge && (
         <>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Cache edge</div>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
+            {targetKind === "cdn" ? "CDN edge" : "Cache edge"}
+          </div>
           <label style={{ fontSize: 12, opacity: 0.7 }}>
             Hit rate: {Math.round((edge.cacheHitRate ?? 0) * 100)}%
           </label>

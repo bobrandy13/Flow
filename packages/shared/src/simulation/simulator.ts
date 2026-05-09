@@ -327,9 +327,9 @@ export function* simulateStream(
       // FORWARD direction.
       // Cache hit short-circuits to return (no further forward exploration).
       let turnAround = false;
-      if (node.kind === "cache" && !req.asyncOrigin) {
+      if ((node.kind === "cache" || node.kind === "cdn") && !req.asyncOrigin) {
         const incomingEdge = findIncomingEdge(diagram, node.id);
-        const hitRate = incomingEdge?.cacheHitRate ?? 0.8;
+        const hitRate = incomingEdge?.cacheHitRate ?? (node.kind === "cdn" ? 0.9 : 0.8);
         if (rng() < hitRate) turnAround = true;
       }
 

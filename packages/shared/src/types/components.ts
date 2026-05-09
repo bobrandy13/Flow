@@ -12,6 +12,7 @@ export const COMPONENT_KINDS = [
   "shard",
   "rate_limiter",
   "circuit_breaker",
+  "cdn",
 ] as const;
 
 export type ComponentKind = (typeof COMPONENT_KINDS)[number];

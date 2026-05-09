@@ -90,6 +90,17 @@ export const COMPONENT_SPECS: Record<ComponentKind, ComponentSpec & { color: str
     color: "#f87171",
     emoji: "🔌",
   },
+  cdn: {
+    kind: "cdn",
+    label: "CDN",
+    // Edge cache geographically close to the client — very low latency on hit.
+    baseLatency: 1,
+    jitter: 0.05,
+    // High concurrency — CDN edge nodes are designed to absorb huge fan-in.
+    capacity: 1000,
+    color: "#22d3ee",
+    emoji: "🌐",
+  },
 };
 
 export const DEFAULT_FAN_OUT: FanOutPolicy = "round_robin";

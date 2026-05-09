@@ -224,11 +224,12 @@ export const LEVELS: Level[] = [
       "load_balancer",
       "server",
       "cache",
+      "cdn",
       "queue",
       "shard",
       "database",
     ],
-    maxOf: { client: 1, load_balancer: 2, server: 6, cache: 2, queue: 2, shard: 2, database: 4 },
+    maxOf: { client: 1, load_balancer: 2, server: 6, cache: 2, cdn: 1, queue: 2, shard: 2, database: 4 },
     rules: [
       { type: "requires_kind", kind: "server", min: 2 },
       { type: "requires_path", from: "client", to: "server" },

@@ -119,6 +119,12 @@ export const KIND_EXPLAINERS: Record<ComponentKind, KindExplainer> = {
       "A circuit breaker watches the recent error rate to its downstream. If the rate climbs above a threshold, the breaker 'opens' and rejects new requests immediately instead of waiting for them to time out. After a cooldown it half-opens, sends a probe, and either closes (recovered) or stays open (still broken).",
     analogy: "Think: an electrical breaker that trips when the line is overloaded — better to disconnect than to burn the house down.",
   },
+  cdn: {
+    one_liner: "An edge cache that sits between clients and your origin.",
+    what_it_does:
+      "A CDN serves cached responses from edge servers that are physically close to clients. On a hit it answers immediately and never touches the origin; on a miss it forwards to the origin (typically a load balancer or server) and caches the response for next time. The hit rate on the CDN edge controls what fraction of traffic ever reaches your backend.",
+    analogy: "Think: regional warehouses for an e-commerce site. Most orders ship from the nearest warehouse; only rare items are pulled from headquarters.",
+  },
 };
 
 /** Short explanations for the simulation result metrics. */
