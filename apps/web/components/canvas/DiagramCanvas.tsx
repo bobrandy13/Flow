@@ -95,7 +95,12 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
       id: n.id,
       type: "component",
       position: n.position,
-      data: { kind: n.kind, runtime: runtimeByNodeId?.[n.id] },
+      data: {
+        kind: n.kind,
+        runtime: runtimeByNodeId?.[n.id],
+        replicaGroupId: n.replicaGroupId,
+        role: n.role,
+      },
       selected: selectedNodes.has(n.id),
       ...(m ? { measured: m, width: m.width, height: m.height } : {}),
     });

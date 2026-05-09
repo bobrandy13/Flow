@@ -15,6 +15,14 @@ export interface DiagramNode {
    * Narrowed by `kind` via the `NodeConfig` discriminated union.
    */
   config?: Extract<NodeConfig, { kind: ComponentKind }>["config"];
+  /**
+   * Replica grouping (databases only, for now). All nodes sharing a
+   * `replicaGroupId` are treated as interchangeable read endpoints by the
+   * simulator. Exactly one member should have `role: "primary"`; the rest
+   * are `role: "replica"`.
+   */
+  replicaGroupId?: string;
+  role?: "primary" | "replica";
 }
 
 /**

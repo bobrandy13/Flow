@@ -38,6 +38,8 @@ const diagramNodeSchema = z.object({
   kind: componentKindSchema,
   position: positionSchema,
   config: nodeConfigSchema,
+  replicaGroupId: z.string().min(1).optional(),
+  role: z.enum(["primary", "replica"]).optional(),
 });
 
 const diagramEdgeSchema = z.object({

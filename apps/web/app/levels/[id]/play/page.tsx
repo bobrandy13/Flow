@@ -9,6 +9,7 @@ import { ComponentPalette } from "@/components/canvas/ComponentPalette";
 import { Toolbar } from "@/components/canvas/Toolbar";
 import { NodeInspector } from "@/components/canvas/NodeInspector";
 import { EdgeInspector } from "@/components/canvas/EdgeInspector";
+import { ResizableSidePanel } from "@/components/canvas/ResizableSidePanel";
 import { SimulationResults } from "@/components/sim/SimulationResults";
 
 import { getLevel } from "@flow/shared/levels";
@@ -402,46 +403,48 @@ export default function PlayPage() {
             }}
           />
         </div>
-        <div style={{ display: "flex", flexDirection: "column", minWidth: 260 }}>
-          <NodeInspector
-            diagram={diagram}
-            selectedNodeId={selectedNodeId}
-            runtime={selectedNodeId ? sim.frame?.perNode[selectedNodeId] : undefined}
-            onChange={setDiagram}
-          />
-          <EdgeInspector diagram={diagram} selectedEdgeId={selectedEdgeId} onChange={setDiagram} />
-          <SimulationResults
-            report={report}
-            nodeLabels={nodeLabels}
-            liveFrame={sim.frame}
-            totalTicks={level.simulation.workload.ticks}
-          />
-          {sim.outcome && (
-            <button
-              type="button"
-              onClick={handleCopyLogs}
-              title="Copy a plain-text diagnostic dump of this simulation run (per-node served/dropped, drop events by tick, your diagram)."
-              style={{
-                margin: "8px 0 4px",
-                padding: "8px 12px",
-                borderRadius: 8,
-                border: "1px solid #1f2937",
-                background: "#111827",
-                color: "#e5e7eb",
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer",
-                width: "100%",
-                textAlign: "left",
-              }}
-            >
-              📋 Copy simulation logs
-              <span style={{ display: "block", fontWeight: 400, opacity: 0.6, marginTop: 2 }}>
-                Per-node served/dropped, drop events by tick, and your diagram.
-              </span>
-            </button>
-          )}
-        </div>
+        <ResizableSidePanel>
+          <div style={{ overflowY: "auto", flex: 1, padding: 0 }}>
+            <NodeInspector
+              diagram={diagram}
+              selectedNodeId={selectedNodeId}
+              runtime={selectedNodeId ? sim.frame?.perNode[selectedNodeId] : undefined}
+              onChange={setDiagram}
+            />
+            <EdgeInspector diagram={diagram} selectedEdgeId={selectedEdgeId} onChange={setDiagram} />
+            <SimulationResults
+              report={report}
+              nodeLabels={nodeLabels}
+              liveFrame={sim.frame}
+              totalTicks={level.simulation.workload.ticks}
+            />
+            {sim.outcome && (
+              <button
+                type="button"
+                onClick={handleCopyLogs}
+                title="Copy a plain-text diagnostic dump of this simulation run (per-node served/dropped, drop events by tick, your diagram)."
+                style={{
+                  margin: "8px 12px 12px",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #1f2937",
+                  background: "#111827",
+                  color: "#e5e7eb",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  width: "calc(100% - 24px)",
+                  textAlign: "left",
+                }}
+              >
+                📋 Copy simulation logs
+                <span style={{ display: "block", fontWeight: 400, opacity: 0.6, marginTop: 2 }}>
+                  Per-node served/dropped, drop events by tick, and your diagram.
+                </span>
+              </button>
+            )}
+          </div>
+        </ResizableSidePanel>
       </div>
     </div>
   );

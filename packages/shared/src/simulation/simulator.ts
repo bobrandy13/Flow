@@ -40,6 +40,9 @@ interface NodeRuntime {
   /** Queue-only: items waiting to be forwarded to a consumer downstream. */
   pending: DeferredQueueItem[];
   peakPendingDepth: number;
+  /** Set true when a scheduled failure window covers the current tick.
+   *  Failed nodes refuse new admissions and (Stage 3) drop in-flight work. */
+  isFailed?: boolean;
 }
 
 interface DeferredQueueItem {
@@ -112,6 +115,44 @@ export function* simulateStream(
   const successors = buildSuccessors(diagram);
   const edgeByPair = new Map<string, DiagramEdge>();
   for (const e of diagram.edges) edgeByPair.set(`${e.fromNodeId}->${e.toNodeId}`, e);
+
+  // Replica groups: replicaGroupId → list of node ids that share the group.
+  // Used to spread admissions across all healthy members of the group.
+  const replicaGroupMembers = new Map<string, string[]>();
+  for (const node of diagram.nodes) {
+    if (!node.replicaGroupId) continue;
+    const list = replicaGroupMembers.get(node.replicaGroupId) ?? [];
+    list.push(node.id);
+    replicaGroupMembers.set(node.replicaGroupId, list);
+  }
+  function componentSpec(kind: ComponentKind) {
+    return COMPONENT_SPECS[kind];
+  }
+  /** If `targetId` is part of a replica group, redirect to the least-loaded
+   *  healthy member (skipping path-blocked ones); else return targetId as-is. */
+  function resolveReplicaTarget(targetId: string, path: ReadonlyArray<string>): string | null {
+    const targetRt = runtimes.get(targetId);
+    if (!targetRt) return targetId;
+    const groupId = targetRt.node.replicaGroupId;
+    if (!groupId) return targetId;
+    const members = replicaGroupMembers.get(groupId);
+    if (!members || members.length <= 1) return targetId;
+    let best: string | null = null;
+    let bestScore = Number.POSITIVE_INFINITY;
+    for (const id of members) {
+      if (path.includes(id)) continue;
+      const rt = runtimes.get(id);
+      if (!rt) continue;
+      if (rt.isFailed) continue;
+      const cap = componentSpec(rt.node.kind).capacity;
+      const score = cap > 0 ? rt.inFlight / cap : rt.inFlight;
+      if (score < bestScore) {
+        bestScore = score;
+        best = id;
+      }
+    }
+    return best;
+  }
 
   // Round-robin cursors per node id.
   const rrCursor = new Map<string, number>();
@@ -207,7 +248,10 @@ export function* simulateStream(
         } else if (node.kind === "shard") {
           policy = (node.config as { fanOut?: FanOutPolicy } | undefined)?.fanOut ?? "consistent_hash";
         }
-        const next = pickNextNotInPath(node.id, req.path, successors, rrCursor, rng, policy, runtimes, req.id);
+        const picked = pickNextNotInPath(node.id, req.path, successors, rrCursor, rng, policy, runtimes, req.id);
+        // If the picked node is part of a replica group, redirect to the
+        // least-loaded healthy member of that group (aggregating capacity).
+        const next = picked ? resolveReplicaTarget(picked, req.path) : null;
         if (next) {
           const nextRt = runtimes.get(next)!;
 

@@ -11,6 +11,8 @@ export interface ComponentNodeData {
   kind: ComponentKind;
   label?: string;
   runtime?: NodeRuntimeSnapshot;
+  replicaGroupId?: string;
+  role?: "primary" | "replica";
   [key: string]: unknown;
 }
 
@@ -90,6 +92,23 @@ export function ComponentNode({ data, selected }: NodeProps) {
       />
       <div style={{ fontSize: 20 }}>{spec.emoji}</div>
       <div style={{ fontSize: 13, fontWeight: 600 }}>{nodeData.label ?? spec.label}</div>
+      {nodeData.replicaGroupId && (
+        <div
+          aria-label={`replica ${nodeData.role ?? ""}`}
+          title={`🔗 Replica group — ${nodeData.role === "primary" ? "primary" : "replica"}.`}
+          style={{
+            position: "absolute",
+            top: 4,
+            right: 6,
+            fontSize: 11,
+            background: "rgba(0,0,0,0.18)",
+            borderRadius: 8,
+            padding: "1px 5px",
+          }}
+        >
+          🔗 {nodeData.role === "primary" ? "P" : "R"}
+        </div>
+      )}
       {runtime && !isUnbounded && (() => {
         const tps = throughputPerSecond(spec);
         const tpsLabel = tps >= 1000 ? `${(tps / 1000).toFixed(1)}k` : `${Math.round(tps)}`;

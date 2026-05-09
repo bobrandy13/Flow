@@ -47,9 +47,89 @@ export function NodeInspector({ diagram, selectedNodeId, runtime, onChange }: No
           }}
         />
       )}
+      {node.kind === "database" && (
+        <ReplicaControls node={node} diagram={diagram} onChange={onChange} />
+      )}
       <button onClick={handleDelete} style={deleteButtonStyle} aria-label="Delete node">
         🗑 Delete node
       </button>
+    </div>
+  );
+}
+
+function ReplicaControls({
+  node,
+  diagram,
+  onChange,
+}: {
+  node: DiagramNode;
+  diagram: Diagram;
+  onChange: (next: Diagram) => void;
+}) {
+  const groupId = node.replicaGroupId;
+  const groupMembers = groupId
+    ? diagram.nodes.filter((n) => n.replicaGroupId === groupId)
+    : [];
+  const handleReplicate = () => {
+    const newGroupId = groupId ?? `rg-${Math.random().toString(36).slice(2, 8)}`;
+    const replicaId = `db-replica-${Math.random().toString(36).slice(2, 8)}`;
+    const newReplica: DiagramNode = {
+      id: replicaId,
+      kind: "database",
+      position: { x: node.position.x + 140, y: node.position.y },
+      replicaGroupId: newGroupId,
+      role: "replica",
+    };
+    const nodes = diagram.nodes.map((n) => {
+      if (n.id !== node.id) return n;
+      return { ...n, replicaGroupId: newGroupId, role: "primary" as const };
+    });
+    onChange({ ...diagram, nodes: [...nodes, newReplica] });
+  };
+  const handleUngroup = () => {
+    // If only 2 members and one is removed (this node), ungroup both. Otherwise
+    // just detach this one from the group.
+    if (groupMembers.length <= 2) {
+      const nodes = diagram.nodes.map((n) =>
+        n.replicaGroupId === groupId ? { ...n, replicaGroupId: undefined, role: undefined } : n,
+      );
+      onChange({ ...diagram, nodes });
+    } else {
+      const nodes = diagram.nodes.map((n) =>
+        n.id === node.id ? { ...n, replicaGroupId: undefined, role: undefined } : n,
+      );
+      onChange({ ...diagram, nodes });
+    }
+  };
+  return (
+    <div style={{ marginTop: 12, padding: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8 }}>
+      <div style={{ fontSize: 11, opacity: 0.65, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6 }}>
+        REPLICATION
+      </div>
+      {groupId ? (
+        <>
+          <div style={{ fontSize: 12, lineHeight: 1.45, marginBottom: 8 }}>
+            🔗 Linked group of <strong>{groupMembers.length}</strong>. This node is a{" "}
+            <strong>{node.role ?? "replica"}</strong>.
+            <span style={{ opacity: 0.65 }}> Reads spread across all healthy members; writes go to the primary.</span>
+          </div>
+          <button onClick={handleReplicate} style={replicateButtonStyle} aria-label="Add replica">
+            ➕ Add replica
+          </button>
+          <button onClick={handleUngroup} style={{ ...replicateButtonStyle, background: "#1f2937", borderColor: "#374151", marginTop: 6 }} aria-label="Ungroup replica">
+            ✂️ Ungroup
+          </button>
+        </>
+      ) : (
+        <>
+          <div style={{ fontSize: 12, lineHeight: 1.45, marginBottom: 8, opacity: 0.85 }}>
+            Standalone database. Replicate to spread reads and tolerate failures.
+          </div>
+          <button onClick={handleReplicate} style={replicateButtonStyle} aria-label="Replicate database">
+            🔗 Replicate
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -179,6 +259,16 @@ const deleteButtonStyle: React.CSSProperties = {
   background: "#7f1d1d",
   color: "#fee2e2",
   border: "1px solid #b91c1c",
+  borderRadius: 6,
+  fontSize: 13,
+  cursor: "pointer",
+};
+const replicateButtonStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "8px 10px",
+  background: "#1e3a8a",
+  color: "#dbeafe",
+  border: "1px solid #2563eb",
   borderRadius: 6,
   fontSize: 13,
   cursor: "pointer",
