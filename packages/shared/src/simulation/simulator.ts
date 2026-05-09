@@ -129,7 +129,7 @@ export function* simulateStream(
   const maxTicks = workload.ticks * 4 + 200;
   for (let tick = 0; tick < maxTicks; tick++) {
     const injecting = tick < workload.ticks;
-    if (!injecting && inFlight.length === 0) break;
+    if (!injecting && inFlight.length === 0 && !hasPendingWork(runtimes)) break;
 
     // reset per-tick counters
     for (const rt of runtimes.values()) {
@@ -185,7 +185,7 @@ export function* simulateStream(
       // FORWARD direction.
       // Cache hit short-circuits to return (no further forward exploration).
       let turnAround = false;
-      if (node.kind === "cache") {
+      if (node.kind === "cache" && !req.asyncOrigin) {
         const incomingEdge = findIncomingEdge(diagram, node.id);
         const hitRate = incomingEdge?.cacheHitRate ?? 0.8;
         if (rng() < hitRate) turnAround = true;
@@ -204,13 +204,53 @@ export function* simulateStream(
         }
         const next = pickNextNotInPath(node.id, req.path, successors, rrCursor, rng, policy, runtimes, req.id);
         if (next) {
+          const nextRt = runtimes.get(next)!;
+
+          // ----- Async producer-consumer queue (Option C) -----
+          // If `next` is a queue AND this request is NOT itself async-origin
+          // work being drained, the queue ACKs immediately and the response
+          // turns around at `node` (the producer). The actual work continues
+          // asynchronously via the per-tick drain step below.
+          if (nextRt.node.kind === "queue" && !req.asyncOrigin) {
+            recordTransition(node.id, next, "forward", transitionsThisTick);
+            if (nextRt.pending.length >= QUEUE_PENDING_MAX) {
+              // Pending overflow → producer sees a drop (no ACK). Counted
+              // on the queue node so the bottleneck explainer fingers it.
+              nextRt.totalDropped += 1;
+              nextRt.droppedThisTick += 1;
+              completed.push({ startTick: req.startTick, endTick: tick, succeeded: false });
+              continue;
+            }
+            nextRt.pending.push({ enqueuedTick: tick });
+            if (nextRt.pending.length > nextRt.peakPendingDepth) {
+              nextRt.peakPendingDepth = nextRt.pending.length;
+            }
+            // Visual: immediate ACK back to producer.
+            recordTransition(next, node.id, "return", transitionsThisTick);
+            // Begin the response journey from the producer back to the client.
+            if (req.path.length < 2) {
+              // Edge case: client → queue directly. ACK is the whole round-trip.
+              completed.push({ startTick: req.startTick, endTick: tick, succeeded: true });
+              continue;
+            }
+            const prev = req.path[req.path.length - 2];
+            const newPath = req.path.slice(0, -1);
+            recordTransition(node.id, prev, "return", transitionsThisTick);
+            admit(prev, tick, newPath, "return", req.startTick);
+            continue;
+          }
+
           recordTransition(node.id, next, "forward", transitionsThisTick);
-          admit(next, tick, [...req.path, next], "forward", req.startTick);
+          admit(next, tick, [...req.path, next], "forward", req.startTick, req.asyncOrigin);
           continue;
         }
         // Dead end → start the return journey.
         turnAround = true;
       }
+
+      // Async-origin work that dead-ends (or cache-hit short-circuits) just
+      // terminates silently. Producer was already ACK'd; no further accounting.
+      if (req.asyncOrigin) continue;
 
       // Turn around: begin returning back along the path the request came in on.
       if (req.path.length < 2) {
@@ -222,6 +262,36 @@ export function* simulateStream(
       const newPath = req.path.slice(0, -1);
       recordTransition(node.id, prev, "return", transitionsThisTick);
       admit(prev, tick, newPath, "return", req.startTick);
+    }
+
+    // 2.5 Queue drain: each queue tries to push pending items to consumers
+    //     with free capacity. Items move as `asyncOrigin=true` work and never
+    //     walk back home — the producer was ACK'd at queue ingress.
+    for (const rt of runtimes.values()) {
+      if (rt.node.kind !== "queue") continue;
+      if (rt.pending.length === 0) continue;
+      const consumers = successors.get(rt.node.id) ?? [];
+      if (consumers.length === 0) continue;
+      // Drain as many items as we can this tick, bounded by consumer capacity.
+      // Stop on the first attempt that fails to find a consumer with room.
+      let safety = rt.pending.length;
+      while (rt.pending.length > 0 && safety-- > 0) {
+        const consumerId = pickNextNotInPath(
+          rt.node.id,
+          [rt.node.id],
+          successors,
+          rrCursor,
+          rng,
+          "round_robin",
+        );
+        if (!consumerId) break;
+        const crt = runtimes.get(consumerId)!;
+        const cap = COMPONENT_SPECS[crt.node.kind].capacity;
+        if (crt.inFlight >= cap) break;
+        rt.pending.shift();
+        recordTransition(rt.node.id, consumerId, "forward", transitionsThisTick);
+        admit(consumerId, tick, [rt.node.id, consumerId], "forward", tick, true);
+      }
     }
 
     // 3. Yield a frame for this tick.
@@ -280,6 +350,7 @@ export function* simulateStream(
     path: string[],
     direction: "forward" | "return",
     startTick: number,
+    asyncOrigin = false,
   ) {
     const rt = runtimes.get(nodeId);
     if (!rt) return;
@@ -289,7 +360,11 @@ export function* simulateStream(
     if (rt.inFlight >= cap) {
       rt.totalDropped += 1;
       rt.droppedThisTick += 1;
-      completed.push({ startTick, endTick: nowTick, succeeded: false });
+      // Async-origin overload doesn't add to user-visible failures (producer
+      // was already ACK'd). It is still counted on the node for diagnostics.
+      if (!asyncOrigin) {
+        completed.push({ startTick, endTick: nowTick, succeeded: false });
+      }
       return;
     }
     rt.inFlight += 1;
@@ -305,7 +380,7 @@ export function* simulateStream(
       path,
       direction,
       startTick,
-      asyncOrigin: false,
+      asyncOrigin,
     });
   }
 }
@@ -348,6 +423,13 @@ function failed(reason: string): SimulationOutcome {
     metrics: { avgLatency: 0, p95Latency: 0, successRate: 0, drops: 0 },
     failureReason: reason,
   };
+}
+
+function hasPendingWork(runtimes: Map<string, NodeRuntime>): boolean {
+  for (const rt of runtimes.values()) {
+    if (rt.pending.length > 0) return true;
+  }
+  return false;
 }
 
 function buildSuccessors(diagram: Diagram): Map<string, string[]> {
