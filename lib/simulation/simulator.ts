@@ -174,10 +174,16 @@ export function* simulateStream(
 
       if (!turnAround) {
         // Try to forward to a successor not already on this request's path.
-        const policy = node.kind === "load_balancer"
-          ? ((node.config as { fanOut?: FanOutPolicy } | undefined)?.fanOut ?? DEFAULT_FAN_OUT)
-          : "round_robin";
-        const next = pickNextNotInPath(node.id, req.path, successors, rrCursor, rng, policy, runtimes);
+        // Both load_balancer and shard read their fan-out policy from config;
+        // shard defaults to consistent_hash so requests with the same id
+        // always land on the same downstream.
+        let policy: FanOutPolicy = "round_robin";
+        if (node.kind === "load_balancer") {
+          policy = (node.config as { fanOut?: FanOutPolicy } | undefined)?.fanOut ?? DEFAULT_FAN_OUT;
+        } else if (node.kind === "shard") {
+          policy = (node.config as { fanOut?: FanOutPolicy } | undefined)?.fanOut ?? "consistent_hash";
+        }
+        const next = pickNextNotInPath(node.id, req.path, successors, rrCursor, rng, policy, runtimes, req.id);
         if (next) {
           recordTransition(node.id, next, "forward", transitionsThisTick);
           admit(next, tick, [...req.path, next], "forward", req.startTick);
@@ -350,6 +356,7 @@ function pickNextNotInPath(
   rng: () => number,
   policy: FanOutPolicy,
   runtimes?: Map<string, NodeRuntime>,
+  requestId?: number,
 ): string | undefined {
   const all = successors.get(fromId) ?? [];
   const pathSet = new Set(path);
@@ -366,12 +373,33 @@ function pickNextNotInPath(
     }
     return best;
   }
+  if (policy === "consistent_hash" && requestId !== undefined) {
+    // Deterministic per-request routing: same requestId always hashes to the
+    // same bucket. Hash the full set of original successors (not the
+    // path-filtered list) so a request consistently maps to the same shard
+    // regardless of which other successors happen to be path-blocked at this
+    // node — then if that bucket is filtered out, fall through to round_robin
+    // among what's left (rare in practice; only happens on multi-hop loops).
+    const stableBucket = hash32(requestId) % all.length;
+    const target = all[stableBucket];
+    if (!pathSet.has(target)) return target;
+    // Fall through to round_robin on the filtered set.
+  }
   // round_robin (default) — cursor scoped to the filtered list so behaviour
   // is stable regardless of which successors happen to be in-path.
   const cursorKey = `${fromId}|${outs.join(",")}`;
   const idx = (rrCursor.get(cursorKey) ?? 0) % outs.length;
   rrCursor.set(cursorKey, idx + 1);
   return outs[idx];
+}
+
+/** Fast 32-bit integer hash. xmur3-flavoured; deterministic, no allocations. */
+function hash32(n: number): number {
+  let h = n | 0;
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  h = (h ^ (h >>> 16)) >>> 0;
+  return h;
 }
 
 function computeMetrics(

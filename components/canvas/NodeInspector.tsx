@@ -32,9 +32,12 @@ export function NodeInspector({ diagram, selectedNodeId, runtime, onChange }: No
       <ComponentInfoCard kind={node.kind} />
       {runtime && node.kind !== "client" && <LiveStatsPanel kind={node.kind} runtime={runtime} />}
       <div style={{ fontSize: 11, opacity: 0.5, marginTop: 10 }}>id: {node.id}</div>
-      {node.kind === "load_balancer" && (
+      {(node.kind === "load_balancer" || node.kind === "shard") && (
         <FanOutSelector
-          value={(node.config as { fanOut?: FanOutPolicy } | undefined)?.fanOut ?? DEFAULT_FAN_OUT}
+          value={
+            (node.config as { fanOut?: FanOutPolicy } | undefined)?.fanOut
+            ?? (node.kind === "shard" ? "consistent_hash" : DEFAULT_FAN_OUT)
+          }
           onChange={(fanOut) => {
             const updated: DiagramNode = { ...node, config: { fanOut } };
             onChange({
