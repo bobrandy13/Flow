@@ -1,0 +1,31 @@
+{
+  "name": "@flow/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "build": "tsc",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/compress": "^8",
+    "@fastify/cors": "^11",
+    "@fastify/rate-limit": "^10",
+    "@flow/shared": "workspace:*",
+    "fastify": "^5",
+    "fastify-type-provider-zod": "^5",
+    "zod": "^3"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "eslint": "^9",
+    "tsx": "^4",
+    "typescript": "^5",
+    "typescript-eslint": "^8",
+    "vitest": "^4.1.5"
+  }
+}
