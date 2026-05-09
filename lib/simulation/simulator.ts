@@ -37,6 +37,13 @@ interface NodeRuntime {
   totalDropped: number;
   servedThisTick: number;
   droppedThisTick: number;
+  /** Queue-only: items waiting to be forwarded to a consumer downstream. */
+  pending: DeferredQueueItem[];
+  peakPendingDepth: number;
+}
+
+interface DeferredQueueItem {
+  enqueuedTick: number;
 }
 
 interface InFlightRequest {
@@ -51,6 +58,10 @@ interface InFlightRequest {
   direction: "forward" | "return";
   /** Tick when this request originally entered the system. */
   startTick: number;
+  /** True for fire-and-forget work spawned by a queue draining its pending
+   *  list. Producer was already ACK'd at queue ingress, so these requests
+   *  must NOT walk back home and must NOT be counted as completed again. */
+  asyncOrigin: boolean;
 }
 
 interface CompletedRequest {
@@ -58,6 +69,12 @@ interface CompletedRequest {
   endTick: number;
   succeeded: boolean;
 }
+
+/** Hard ceiling on a queue's pending list. Beyond this, new arrivals are
+ *  rejected at the producer (no ACK → counted as failures by the producer).
+ *  Exported for tests and future visualisation hooks; consumed by Stage 3
+ *  async-queue logic in `simulateStream()`. */
+export const QUEUE_PENDING_MAX = 1000;
 
 /**
  * Streaming variant of `simulate()`. Yields one `TickFrame` per simulated
@@ -87,6 +104,8 @@ export function* simulateStream(
       totalDropped: 0,
       servedThisTick: 0,
       droppedThisTick: 0,
+      pending: [],
+      peakPendingDepth: 0,
     });
   }
 
@@ -286,6 +305,7 @@ export function* simulateStream(
       path,
       direction,
       startTick,
+      asyncOrigin: false,
     });
   }
 }
@@ -315,6 +335,8 @@ function snapshotRuntimes(runtimes: Map<string, NodeRuntime>): Record<string, No
       droppedTotal: rt.totalDropped,
       servedThisTick: rt.servedThisTick,
       droppedThisTick: rt.droppedThisTick,
+      pendingDepth: rt.pending.length,
+      peakPendingDepth: rt.peakPendingDepth,
     };
   }
   return out;

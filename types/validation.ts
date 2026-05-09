@@ -62,6 +62,11 @@ export interface NodeRuntimeSnapshot {
   servedThisTick: number;
   /** Requests dropped at this node on this tick. */
   droppedThisTick: number;
+  /** For queue nodes: number of messages currently waiting in the queue's
+   *  pending list to be consumed downstream. 0 for non-queue nodes. */
+  pendingDepth: number;
+  /** Highest pendingDepth observed at this node so far this run. */
+  peakPendingDepth: number;
 }
 
 /** Single hop of a request from one node to another, used by the
