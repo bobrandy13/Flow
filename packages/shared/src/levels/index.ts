@@ -254,7 +254,7 @@ export const LEVELS: Level[] = [
     brief:
       "Mid-run, the database fails for a while. A single DB topology will lose every request during that window. Replicate the database so reads survive the outage.",
     allowedComponents: ["client", "server", "database"],
-    maxOf: { client: 1, server: 2, database: 3 },
+    maxOf: { client: 1, server: 1, database: 3 },
     rules: [
       { type: "requires_kind", kind: "database", min: 2 },
       { type: "requires_path", from: "client", to: "server" },
@@ -266,7 +266,7 @@ export const LEVELS: Level[] = [
         ticks: 80,
         failures: [{ atTick: 20, durationTicks: 25, target: { kind: "database" } }],
       },
-      sla: { minSuccessRate: 0.6, maxP95Latency: 100 },
+      sla: { minSuccessRate: 0.85, maxP95Latency: 100 },
       seed: 10,
     },
   },
