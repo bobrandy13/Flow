@@ -139,6 +139,53 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
       animated: activeEdgeIds.has(e.id),
     });
   }
+  // Synthetic "tether" edges: dashed lines between members of the same
+  // replica group. Visual-only — they don't exist in the diagram model and
+  // are non-interactive (can't be selected, dragged, or deleted). They make
+  // it obvious which databases are linked even when the player drags them
+  // far apart on the canvas.
+  {
+    const groups = new Map<string, string[]>();
+    for (const n of diagram.nodes) {
+      if (!n.replicaGroupId) continue;
+      const arr = groups.get(n.replicaGroupId);
+      if (arr) arr.push(n.id);
+      else groups.set(n.replicaGroupId, [n.id]);
+    }
+    for (const [groupId, memberIds] of groups) {
+      if (memberIds.length < 2) continue;
+      const primary = diagram.nodes.find(
+        (n) => n.replicaGroupId === groupId && n.role === "primary",
+      );
+      const anchor = primary?.id ?? memberIds[0];
+      for (const id of memberIds) {
+        if (id === anchor) continue;
+        rfEdges.push({
+          id: `__tether__:${groupId}:${anchor}->${id}`,
+          source: anchor,
+          target: id,
+          type: "straight",
+          selectable: false,
+          focusable: false,
+          deletable: false,
+          reconnectable: false,
+          style: {
+            stroke: "#a855f7",
+            strokeWidth: 1.5,
+            strokeDasharray: "2 4",
+            opacity: 0.7,
+          },
+          label: "🔗",
+          labelStyle: { fontSize: 10, fill: "#a855f7" },
+          labelBgStyle: { fill: "#0b1220", fillOpacity: 0.85 },
+          labelBgPadding: [2, 2],
+          labelBgBorderRadius: 2,
+          // Keep tether under semantic edges visually but above grid.
+          zIndex: -1,
+        });
+      }
+    }
+  }
   /* eslint-enable react-hooks/refs */
 
   const handleNodesChange = useCallback(
