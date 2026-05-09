@@ -204,18 +204,29 @@ export default function PlayPage() {
             background: "rgba(251, 191, 36, 0.08)",
             borderBottom: "1px solid rgba(251, 191, 36, 0.3)",
             color: "#fcd34d",
-            padding: "6px 16px",
+            padding: "8px 16px",
             fontSize: 12,
             display: "flex",
-            alignItems: "center",
-            gap: 8,
+            alignItems: "flex-start",
+            gap: 10,
           }}
         >
-          <span>🧪</span>
-          <span>
-            <strong>Sandbox run.</strong> The level&apos;s rules aren&apos;t met yet, so this run won&apos;t count
-            toward completion — but you can still watch what happens. Compare it to a design that satisfies the rules.
-          </span>
+          <span style={{ fontSize: 14, lineHeight: 1.2 }}>🧪</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 600, marginBottom: 2 }}>
+              Sandbox run — won&apos;t count toward completion.
+            </div>
+            <div style={{ opacity: 0.85, marginBottom: 4 }}>
+              The simulation runs, but the level&apos;s rules aren&apos;t satisfied yet. Fix these to earn the ✓:
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, listStyle: "disc" }}>
+              {baseReport!.ruleResults
+                .filter((r) => !r.passed)
+                .map((r, idx) => (
+                  <li key={idx} style={{ lineHeight: 1.5 }}>{r.message}</li>
+                ))}
+            </ul>
+          </div>
         </div>
       )}
       {(sim.isRunning || sim.frame || sim.loading || sim.error) && (
