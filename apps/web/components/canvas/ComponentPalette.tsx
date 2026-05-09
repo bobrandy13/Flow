@@ -9,6 +9,10 @@ interface ComponentPaletteProps {
   allowed: ComponentKind[];
   /** Click-to-add (keyboard / a11y fallback). */
   onAdd: (kind: ComponentKind) => void;
+  /** Current count of each kind already placed on the canvas. */
+  counts?: Partial<Record<ComponentKind, number>>;
+  /** Optional per-kind cap from the level definition. */
+  maxOf?: Partial<Record<ComponentKind, number>>;
 }
 
 type PaletteCategory = "Compute" | "Data" | "Routing";
@@ -25,7 +29,7 @@ const CATEGORY_OF: Record<ComponentKind, PaletteCategory> = {
 
 const CATEGORY_ORDER: PaletteCategory[] = ["Compute", "Routing", "Data"];
 
-export function ComponentPalette({ allowed, onAdd }: ComponentPaletteProps) {
+export function ComponentPalette({ allowed, onAdd, counts, maxOf }: ComponentPaletteProps) {
   const grouped = new Map<PaletteCategory, ComponentKind[]>();
   for (const kind of allowed) {
     const cat = CATEGORY_OF[kind];
@@ -58,6 +62,9 @@ export function ComponentPalette({ allowed, onAdd }: ComponentPaletteProps) {
           </div>
           {grouped.get(cat)!.map((kind) => {
             const spec = COMPONENT_SPECS[kind];
+            const used = counts?.[kind] ?? 0;
+            const cap = maxOf?.[kind];
+            const atLimit = cap !== undefined && used >= cap;
             return (
               <div
                 key={kind}
@@ -67,13 +74,25 @@ export function ComponentPalette({ allowed, onAdd }: ComponentPaletteProps) {
               >
                 <button
                   type="button"
-                  draggable
+                  draggable={!atLimit}
+                  disabled={atLimit}
+                  aria-label={
+                    atLimit
+                      ? `${spec.label} — limit reached (${used} of ${cap})`
+                      : `Add ${spec.label}${cap !== undefined ? ` (${used} of ${cap} used)` : ""}`
+                  }
                   onDragStart={(event) => {
+                    if (atLimit) {
+                      event.preventDefault();
+                      return;
+                    }
                     event.dataTransfer.setData(PALETTE_DRAG_MIME, kind);
                     event.dataTransfer.setData("text/plain", spec.label);
                     event.dataTransfer.effectAllowed = "move";
                   }}
-                  onClick={() => onAdd(kind)}
+                  onClick={() => {
+                    if (!atLimit) onAdd(kind);
+                  }}
                   style={{
                     width: "100%",
                     display: "flex",
@@ -84,14 +103,46 @@ export function ComponentPalette({ allowed, onAdd }: ComponentPaletteProps) {
                     border: "1px solid #1f2937",
                     background: "#111827",
                     color: "#e5e7eb",
-                    cursor: "grab",
+                    cursor: atLimit ? "not-allowed" : "grab",
                     fontSize: 13,
                     textAlign: "left",
                     userSelect: "none",
+                    opacity: atLimit ? 0.45 : 1,
                   }}
                 >
                   <span style={{ fontSize: 18 }}>{spec.emoji}</span>
-                  <span>{spec.label}</span>
+                  <span style={{ flex: 1 }}>{spec.label}</span>
+                  {cap !== undefined ? (
+                    <span
+                      title={`${used} placed of ${cap} allowed`}
+                      style={{
+                        fontSize: 10,
+                        fontVariantNumeric: "tabular-nums",
+                        padding: "1px 6px",
+                        borderRadius: 999,
+                        background: atLimit ? "rgba(248,113,113,0.18)" : "rgba(255,255,255,0.06)",
+                        color: atLimit ? "#fca5a5" : "#9ca3af",
+                        border: `1px solid ${atLimit ? "rgba(248,113,113,0.4)" : "rgba(255,255,255,0.08)"}`,
+                      }}
+                    >
+                      {used}/{cap}
+                    </span>
+                  ) : used > 0 ? (
+                    <span
+                      title={`${used} placed (no limit)`}
+                      style={{
+                        fontSize: 10,
+                        fontVariantNumeric: "tabular-nums",
+                        padding: "1px 6px",
+                        borderRadius: 999,
+                        background: "rgba(255,255,255,0.06)",
+                        color: "#9ca3af",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                      }}
+                    >
+                      {used}
+                    </span>
+                  ) : null}
                 </button>
                 <span
                   role="tooltip"

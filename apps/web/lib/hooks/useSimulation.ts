@@ -12,6 +12,8 @@ const API_BASE =
 export interface UseSimulationResult {
   frame: TickFrame | null;
   outcome: SimulationOutcome | null;
+  /** All frames from the most recent fetched run, for diagnostics/export. */
+  frames: TickFrame[] | null;
   isRunning: boolean;
   isFinished: boolean;
   loading: boolean;
@@ -36,6 +38,7 @@ export interface UseSimulationResult {
 export function useSimulation(input: SimulationInput | null): UseSimulationResult {
   const [frame, setFrame] = useState<TickFrame | null>(null);
   const [outcome, setOutcome] = useState<SimulationOutcome | null>(null);
+  const [frames, setFrames] = useState<TickFrame[] | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +75,7 @@ export function useSimulation(input: SimulationInput | null): UseSimulationResul
     framesRef.current = null;
     outcomeRef.current = null;
     frameIndexRef.current = 0;
+    setFrames(null);
     setIsRunning(false);
     setFrame(null);
     setOutcome(null);
@@ -168,6 +172,7 @@ export function useSimulation(input: SimulationInput | null): UseSimulationResul
       framesRef.current = parsed.frames as unknown as TickFrame[];
       outcomeRef.current = parsed.outcome as unknown as SimulationOutcome;
       frameIndexRef.current = 0;
+      setFrames(framesRef.current);
       setLoading(false);
       startReplay();
     } catch (err) {
@@ -201,6 +206,7 @@ export function useSimulation(input: SimulationInput | null): UseSimulationResul
   return {
     frame,
     outcome,
+    frames,
     isRunning,
     isFinished: outcome != null,
     loading,

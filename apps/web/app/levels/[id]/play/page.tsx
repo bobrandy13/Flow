@@ -14,6 +14,8 @@ import { SimulationResults } from "@/components/sim/SimulationResults";
 import { getLevel } from "@flow/shared/levels";
 import { evaluateRules } from "@flow/shared/engine/validator";
 import { canSimulate, diagramSimulatabilityIssue } from "@flow/shared/engine/simulatability";
+import { exportDiagramJson } from "@flow/shared/engine/export-diagram";
+import { buildSimulationLogs } from "@flow/shared/engine/simulation-logs";
 import { useSimulation } from "@/lib/hooks/useSimulation";
 import { recordAttempt, recordCompletion } from "@/lib/storage/progress";
 import { DEFAULT_FAN_OUT, COMPONENT_SPECS } from "@flow/shared/engine/component-specs";
@@ -142,6 +144,64 @@ export default function PlayPage() {
     sim.reset();
   }, [sim]);
 
+  const [toast, setToast] = useState<string | null>(null);
+  const flashToast = useCallback((msg: string) => {
+    setToast(msg);
+    window.setTimeout(() => setToast((t) => (t === msg ? null : t)), 1800);
+  }, []);
+
+  const copyToClipboard = useCallback(
+    async (text: string, successMsg: string) => {
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+        }
+        flashToast(successMsg);
+      } catch {
+        flashToast("Copy failed — check clipboard permissions");
+      }
+    },
+    [flashToast],
+  );
+
+  const handleExport = useCallback(() => {
+    void copyToClipboard(exportDiagramJson(diagram), "Diagram copied to clipboard");
+  }, [diagram, copyToClipboard]);
+
+  const handleCopyLogs = useCallback(() => {
+    if (!level || !sim.outcome) return;
+    const text = buildSimulationLogs({
+      levelId: level.id,
+      levelTitle: level.title,
+      diagram,
+      outcome: sim.outcome,
+      frames: sim.frames ?? undefined,
+      finalPerNode: sim.frame?.perNode,
+      sla: {
+        minSuccessRate: level.simulation.sla.minSuccessRate,
+        p95LatencyMaxTicks: level.simulation.sla.maxP95Latency,
+      },
+    });
+    void copyToClipboard(text, "Logs copied to clipboard");
+  }, [level, sim.outcome, sim.frames, sim.frame, diagram, copyToClipboard]);
+
+  const componentCounts = useMemo(() => {
+    const counts: Partial<Record<ComponentKind, number>> = {};
+    for (const n of diagram.nodes) {
+      counts[n.kind] = (counts[n.kind] ?? 0) + 1;
+    }
+    return counts;
+  }, [diagram.nodes]);
+
   const nodeLabels = useMemo(() => {
     const map: Record<string, string> = {};
     for (const n of diagram.nodes) {
@@ -193,6 +253,8 @@ export default function PlayPage() {
         onValidate={handleValidate}
         onReset={handleReset}
         onRunSimulation={handleRunSimulation}
+        onExport={handleExport}
+        toast={toast ?? undefined}
         isSimulating={sim.isRunning}
         runDisabled={!canSimulate(diagram)}
         runDisabledReason={simulatabilityIssue ?? undefined}
@@ -302,7 +364,12 @@ export default function PlayPage() {
         </div>
       )}
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-        <ComponentPalette allowed={level.allowedComponents} onAdd={handleAdd} />
+        <ComponentPalette
+          allowed={level.allowedComponents}
+          onAdd={handleAdd}
+          counts={componentCounts}
+          maxOf={level.maxOf}
+        />
         <div style={{ flex: 1, minWidth: 0 }}>
           <DiagramCanvas
             diagram={diagram}
@@ -330,6 +397,31 @@ export default function PlayPage() {
             liveFrame={sim.frame}
             totalTicks={level.simulation.workload.ticks}
           />
+          {sim.outcome && (
+            <button
+              type="button"
+              onClick={handleCopyLogs}
+              title="Copy a plain-text diagnostic dump of this simulation run (per-node served/dropped, drop events by tick, your diagram)."
+              style={{
+                margin: "8px 0 4px",
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "1px solid #1f2937",
+                background: "#111827",
+                color: "#e5e7eb",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                width: "100%",
+                textAlign: "left",
+              }}
+            >
+              📋 Copy simulation logs
+              <span style={{ display: "block", fontWeight: 400, opacity: 0.6, marginTop: 2 }}>
+                Per-node served/dropped, drop events by tick, and your diagram.
+              </span>
+            </button>
+          )}
         </div>
       </div>
     </div>
