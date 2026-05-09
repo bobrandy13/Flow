@@ -25,27 +25,34 @@ const MAX_PARTICLES = 240;
 const FORWARD_COLOR = "#60a5fa";
 const RETURN_COLOR = "#34d399";
 /** Perpendicular offset (in flow units) between forward/return lanes. */
-const LANE_OFFSET = 7;
+const LANE_OFFSET = 6;
+/** Visual aggregation: one rendered dot represents ~this many requests. */
+const REQUESTS_PER_DOT = 5;
+/** Pixel radius of a particle. Kept small so heavy traffic doesn't smear. */
+const PARTICLE_RADIUS = 2.25;
 let nextParticleId = 1;
 
 /**
- * Pick up to `limit` transitions while guaranteeing **per-edge fairness**.
+ * Pick up to `limit` transitions while guaranteeing **per-edge fairness**
+ * AND **visual aggregation** — one rendered dot represents `requestsPerDot`
+ * underlying requests on the same (edge, direction).
  *
  * The simulator emits transitions grouped by phase (all client injections
  * first, then forward hops, then returns). A naïve `slice(0, limit)` will
  * therefore starve downstream edges whenever the per-tick volume exceeds
- * the particle cap — e.g. at 22 req/tick the entire cap is consumed by
- * `client → load_balancer` and the dots never appear past the LB.
- *
- * Round-robin across `edgeId+direction` buckets so every active edge
- * shows at least one dot before any single edge gets a second.
+ * the particle cap. We:
+ *   1. Group by `edgeId|direction`.
+ *   2. Subsample each bucket down to `ceil(bucket.length / requestsPerDot)`
+ *      so a 25-req burst on one edge becomes ~5 dots, not 25.
+ *   3. Round-robin across buckets up to `limit` so every active edge shows
+ *      at least one dot before any single edge gets a second.
  */
 export function sampleTransitionsFairly<T extends { edgeId: string; direction: string }>(
   transitions: T[],
   limit: number,
+  requestsPerDot = REQUESTS_PER_DOT,
 ): T[] {
   if (limit <= 0 || transitions.length === 0) return [];
-  if (transitions.length <= limit) return transitions;
   const buckets = new Map<string, T[]>();
   const order: string[] = [];
   for (const t of transitions) {
@@ -57,6 +64,21 @@ export function sampleTransitionsFairly<T extends { edgeId: string; direction: s
       order.push(key);
     }
     b.push(t);
+  }
+  // Subsample each bucket: keep every Nth item so each rendered dot stands
+  // in for ~requestsPerDot underlying requests on that edge+direction.
+  if (requestsPerDot > 1) {
+    for (const key of order) {
+      const b = buckets.get(key)!;
+      if (b.length <= requestsPerDot) {
+        // Always keep at least one so the edge is visibly active.
+        buckets.set(key, [b[0]]);
+        continue;
+      }
+      const reduced: T[] = [];
+      for (let i = 0; i < b.length; i += requestsPerDot) reduced.push(b[i]);
+      buckets.set(key, reduced);
+    }
   }
   const picked: T[] = [];
   let exhausted = false;
@@ -284,13 +306,13 @@ export function ParticleLayer({ transitions, durationMs = 600 }: ParticleLayerPr
       {particles.map((p) => {
         const color = p.direction === "forward" ? FORWARD_COLOR : RETURN_COLOR;
         const glow = p.direction === "forward"
-          ? "drop-shadow(0 0 4px rgba(96,165,250,0.8))"
-          : "drop-shadow(0 0 4px rgba(52,211,153,0.8))";
+          ? "drop-shadow(0 0 2px rgba(96,165,250,0.9))"
+          : "drop-shadow(0 0 2px rgba(52,211,153,0.9))";
         return (
           <circle
             key={p.id}
             ref={(el) => { elRefs.current.set(p.id, el); }}
-            r={4}
+            r={PARTICLE_RADIUS}
             fill={color}
             opacity={1}
             style={{ filter: glow }}
