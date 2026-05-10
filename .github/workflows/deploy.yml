@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 env:
-  GCP_REGION: ${{ vars.GCP_REGION || 'australia-southeast1' }}
+  GCP_REGION: ${{ vars.GCP_REGION || 'asia-southeast1' }}
   GAR_REPO: flow-images
   WEB_SERVICE: flow-web
   API_SERVICE: flow-api
