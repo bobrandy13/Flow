@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
+    "start:prod": "tsx src/server.ts",
     "build": "tsc",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
@@ -18,12 +19,12 @@
     "@flow/shared": "workspace:*",
     "fastify": "^5",
     "fastify-type-provider-zod": "^5",
+    "tsx": "^4",
     "zod": "^3"
   },
   "devDependencies": {
     "@types/node": "^20",
     "eslint": "^9",
-    "tsx": "^4",
     "typescript": "^5",
     "typescript-eslint": "^8",
     "vitest": "^4.1.5"

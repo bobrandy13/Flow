@@ -1,0 +1,21 @@
+ services:
+   web:
+     build:
+       context: .
+       dockerfile: apps/web/Dockerfile
+     ports:
+       - "3000:3000"
+     depends_on:
+       api:
+         condition: service_healthy
+ 
+   api:
+     build:
+       context: .
+       dockerfile: apps/api/Dockerfile
+     ports:
+       - "4000:4000"
+     environment:
+       PORT: 4000
+       HOST: 0.0.0.0
+       CORS_ORIGINS: http://localhost:3000
