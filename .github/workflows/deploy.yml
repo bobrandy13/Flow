@@ -87,7 +87,7 @@ jobs:
         run: |
           IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.WEB_SERVICE }}"
           docker build -f apps/web/Dockerfile \
-            --build-arg NEXT_PUBLIC_API_BASE_URL=${{ needs.deploy-api.outputs.api_url }} \
+            --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.learnsystemdesign.net \
             -t "${IMAGE}:${{ github.sha }}" -t "${IMAGE}:latest" .
           docker push "${IMAGE}" --all-tags
 
