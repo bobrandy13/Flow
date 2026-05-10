@@ -29,24 +29,25 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
-  // Default: allow any localhost / 127.0.0.1 origin in dev so port shuffling
-  // (e.g. Next falling back to :3001 when :3000 is busy) doesn't break the
-  // app. In prod, override via CORS_ORIGINS env.
-  const allowedOrigins = opts.corsOrigins;
+  // Always use a predicate so we can: (a) accept localhost in dev, (b) accept
+  // explicit allow-list entries, (c) accept *.run.app subdomains in prod
+  // (Cloud Run service URLs). The game has no auth or sensitive data, so
+  // allowing peer Cloud Run services is acceptable.
+  const allowedOrigins = opts.corsOrigins ?? [];
   await app.register(cors, {
-    origin: allowedOrigins
-      ? allowedOrigins
-      : (origin, cb) => {
-          if (!origin) return cb(null, true); // same-origin / curl
-          try {
-            const url = new URL(origin);
-            const isLocalhost =
-              url.hostname === "localhost" || url.hostname === "127.0.0.1";
-            return cb(null, isLocalhost);
-          } catch {
-            return cb(null, false);
-          }
-        },
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true); // same-origin / curl
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      try {
+        const url = new URL(origin);
+        const isLocalhost =
+          url.hostname === "localhost" || url.hostname === "127.0.0.1";
+        const isCloudRun = url.hostname.endsWith(".run.app");
+        return cb(null, isLocalhost || isCloudRun);
+      } catch {
+        return cb(null, false);
+      }
+    },
     methods: ["GET", "POST"],
   });
 
