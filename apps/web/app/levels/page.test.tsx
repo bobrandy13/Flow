@@ -26,8 +26,23 @@ describe("LevelsPage chapters", () => {
   it("locks chapters when the prior chapter has no completed levels", () => {
     // localStorage is empty in a fresh test → only Basics is unlocked.
     render(<LevelsPage />);
-    const lockBadges = screen.getAllByText(/locked/);
+    const lockBadges = screen.getAllByText(/🔒 locked/);
     // Scaling + Composition + Reliability + Edge all locked initially.
     expect(lockBadges.length).toBe(4);
+  });
+
+  it("renders the progress header and reset link", () => {
+    render(<LevelsPage />);
+    // Progress header shows "0 / N levels complete" on a fresh slate.
+    expect(screen.getByText(/levels complete/)).toBeTruthy();
+    expect(screen.getByRole("progressbar")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Reset all progress/i })).toBeTruthy();
+  });
+
+  it("renders the filter tablist", () => {
+    render(<LevelsPage />);
+    expect(screen.getByRole("tablist", { name: /Filter levels/i })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "All" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Locked" })).toBeTruthy();
   });
 });

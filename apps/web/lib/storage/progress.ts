@@ -58,6 +58,17 @@ export function recordAttempt(levelId: string, diagram: Diagram): ProgressMap {
   return all;
 }
 
+/** Wipes ALL persisted progress + lessons-seen. Used by the reset link. */
+export function clearAllProgress(): void {
+  if (!isBrowser()) return;
+  try {
+    window.localStorage.removeItem(KEY);
+    window.localStorage.removeItem(LESSON_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 const LESSON_KEY = "flow.lessonsSeen.v1";
 
 function loadLessonsSeen(): Record<string, true> {
