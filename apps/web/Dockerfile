@@ -27,6 +27,8 @@ COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_module
 
 COPY . .
 
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN pnpm --filter @flow/web build
