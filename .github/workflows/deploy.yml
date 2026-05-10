@@ -108,8 +108,14 @@ jobs:
           env_vars: |
             NODE_ENV=production
 
-      - name: Set API CORS to Web URL
+      - name: Get Web URL and update API CORS
         run: |
+          WEB_URL="${{ steps.deploy.outputs.url }}"
+          if [ -z "$WEB_URL" ]; then
+            WEB_URL=$(gcloud run services describe ${{ env.WEB_SERVICE }} \
+              --region=${{ env.GCP_REGION }} --format='value(status.url)')
+          fi
+          echo "Setting CORS_ORIGINS to: $WEB_URL"
           gcloud run services update ${{ env.API_SERVICE }} \
             --region=${{ env.GCP_REGION }} \
-            --update-env-vars="CORS_ORIGINS=${{ steps.deploy.outputs.url }}"
+            --update-env-vars="CORS_ORIGINS=$WEB_URL"
