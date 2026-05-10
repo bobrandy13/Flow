@@ -43,7 +43,10 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
         const isLocalhost =
           url.hostname === "localhost" || url.hostname === "127.0.0.1";
         const isCloudRun = url.hostname.endsWith(".run.app");
-        return cb(null, isLocalhost || isCloudRun);
+        const isAppDomain =
+          url.hostname === "learnsystemdesign.net" ||
+          url.hostname.endsWith(".learnsystemdesign.net");
+        return cb(null, isLocalhost || isCloudRun || isAppDomain);
       } catch {
         return cb(null, false);
       }
