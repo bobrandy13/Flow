@@ -7,11 +7,12 @@ import LevelsPage from "./page";
  * The 5 new Phase 2.5 levels must show up under the right chapters.
  */
 describe("LevelsPage chapters", () => {
-  it("renders Basics, Scaling, and Composition headings", () => {
+  it("renders Foundations, Scaling, and Composition headings", () => {
     render(<LevelsPage />);
-    expect(screen.getByRole("heading", { name: "Basics" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Scaling" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Composition" })).toBeTruthy();
+    // Headings carry the chapter name plus an optional "✔ COMPLETE" marker.
+    expect(screen.getByRole("heading", { name: /Basics/ })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /Scaling/ })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /Composition/ })).toBeTruthy();
   });
 
   it("includes the new Phase 2.5 level titles", () => {
@@ -26,15 +27,16 @@ describe("LevelsPage chapters", () => {
   it("locks chapters when the prior chapter has no completed levels", () => {
     // localStorage is empty in a fresh test → only Basics is unlocked.
     render(<LevelsPage />);
-    const lockBadges = screen.getAllByText(/🔒 locked/);
+    const lockBadges = screen.getAllByText(/🔒 LOCKED/);
     // Scaling + Composition + Reliability + Edge all locked initially.
     expect(lockBadges.length).toBe(4);
   });
 
   it("renders the progress header and reset link", () => {
     render(<LevelsPage />);
-    // Progress header shows "0 / N levels complete" on a fresh slate.
-    expect(screen.getByText(/levels complete/)).toBeTruthy();
+    // Progress header is now styled as a "PROJECT STATUS" / "SHEETS COMPLETE" stamp.
+    expect(screen.getByText(/PROJECT STATUS/i)).toBeTruthy();
+    expect(screen.getByText(/SHEETS/i)).toBeTruthy();
     expect(screen.getByRole("progressbar")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Reset all progress/i })).toBeTruthy();
   });

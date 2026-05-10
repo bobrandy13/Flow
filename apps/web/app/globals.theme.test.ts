@@ -21,7 +21,16 @@ describe("globals.css theme", () => {
     expect(css).not.toMatch(/prefers-color-scheme:\s*light/);
   });
 
-  it("uses the canonical dark background token (#0b1020)", () => {
-    expect(css.toLowerCase()).toContain("#0b1020");
+  it("uses the blueprint navy background token (#0e1a2b)", () => {
+    expect(css.toLowerCase()).toContain("#0e1a2b");
+  });
+
+  it("paints a blueprint grid pattern on the body", () => {
+    // Phase 3.2: the body should layer linear-gradient grid lines (the
+    // 24px major + 8px minor blueprint pattern) so every page inherits
+    // the paper-and-grid look without each page re-implementing it.
+    expect(css).toMatch(/background-image:\s*[\s\S]*linear-gradient/);
+    expect(css).toMatch(/--grid-major/);
+    expect(css).toMatch(/--grid-minor/);
   });
 });

@@ -106,13 +106,9 @@ export function SimulationResults({ report, nodeLabels, liveFrame, totalTicks }:
       {report?.simulation && (
         <>
           <div style={{ fontSize: 14, fontWeight: 700, margin: "12px 0 8px" }}>Simulation</div>
-          <Metric
-            k="Status"
-            v={report.simulation.passed ? "PASS" : "FAIL"}
-            accent={report.simulation.passed ? "#34d399" : "#f87171"}
-          />
+          <PassFailStamp passed={report.simulation.passed} />
           {report.simulation.failureReason && (
-            <div style={{ fontSize: 12, color: "#f87171", margin: "4px 0" }}>
+            <div style={{ fontSize: 12, color: "#ff5c5c", margin: "4px 0" }}>
               {report.simulation.failureReason}
             </div>
           )}
@@ -163,15 +159,54 @@ function Metric({ k, v, accent, tip }: { k: string; v: string; accent?: string; 
   return (
     <div style={{ fontSize: 12, marginTop: 4, display: "flex", justifyContent: "space-between" }}>
       {label}
-      <span style={{ fontWeight: 600, color: accent ?? "#e5e7eb" }}>{v}</span>
+      <span style={{ fontWeight: 600, color: accent ?? "#f5efd6", fontFamily: "var(--font-mono), ui-monospace, monospace" }}>{v}</span>
+    </div>
+  );
+}
+
+/**
+ * Approval-stamp banner for the simulation verdict. Mimics a rubber stamp:
+ * tilted ≈3°, double-bordered, uppercase tracked text. Lime for APPROVED,
+ * red for REJECTED.
+ */
+function PassFailStamp({ passed }: { passed: boolean }) {
+  const fg = passed ? "#9be36b" : "#ff5c5c";
+  return (
+    <div
+      role="status"
+      aria-label={passed ? "Simulation approved" : "Simulation rejected"}
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        margin: "10px 0 8px",
+      }}
+    >
+      <div
+        style={{
+          transform: "rotate(-3deg)",
+          border: `2px solid ${fg}`,
+          outline: `1px solid ${fg}`,
+          outlineOffset: 3,
+          padding: "6px 14px",
+          color: fg,
+          fontFamily: "var(--font-display), Oswald, sans-serif",
+          fontWeight: 700,
+          letterSpacing: 4,
+          textTransform: "uppercase",
+          fontSize: 13,
+          background: passed ? "rgba(155, 227, 107, 0.08)" : "rgba(255, 92, 92, 0.08)",
+        }}
+      >
+        {passed ? "STAMPED · APPROVED" : "STAMPED · REJECTED"}
+      </div>
     </div>
   );
 }
 
 const panelStyle: React.CSSProperties = {
   padding: 12,
-  background: "#0b1020",
-  color: "#e5e7eb",
-  borderTop: "1px solid #1f2937",
+  background: "#0e1a2b",
+  color: "#f5efd6",
+  borderTop: "1px solid #22405f",
   minWidth: 240,
 };

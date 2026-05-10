@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, JetBrains_Mono, Oswald } from "next/font/google";
 import "./globals.css";
 import { TopNav } from "@/components/nav/TopNav";
 
@@ -8,8 +8,16 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Industrial display face for blueprint headings (uppercase + tracked).
+const oswald = Oswald({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["500", "700"],
+});
+
+// Monospace for metric callouts (latency, success %, sheet numbers).
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -26,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${oswald.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <TopNav />

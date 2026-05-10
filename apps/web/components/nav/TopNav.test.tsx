@@ -11,18 +11,18 @@ describe("TopNav", () => {
     if (typeof window !== "undefined") window.localStorage.clear();
   });
 
-  it("renders Flow wordmark, Levels link, and progress widget", () => {
+  it("renders Flow wordmark, Drawings link, and progress widget", () => {
     render(<TopNav />);
     expect(screen.getByRole("link", { name: /Flow home/i })).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Levels/i })).toBeTruthy();
-    // Progress widget shows "0 / N ✓" on a fresh slate.
+    expect(screen.getByRole("link", { name: /Drawings/i })).toBeTruthy();
+    // Progress widget shows "00 / N" on a fresh slate.
     expect(screen.getByTitle(/of \d+ levels completed/)).toBeTruthy();
   });
 
   it("marks the active route with aria-current=page", () => {
     render(<TopNav />);
-    const levelsLink = screen.getByRole("link", { name: "Levels" });
-    expect(levelsLink.getAttribute("aria-current")).toBe("page");
+    const drawingsLink = screen.getByRole("link", { name: /Drawings/i });
+    expect(drawingsLink.getAttribute("aria-current")).toBe("page");
   });
 });
 
