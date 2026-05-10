@@ -1,6 +1,7 @@
 "use client";
 
 import type { Diagram } from "@flow/shared/types/diagram";
+import { color, fontFamily } from "@/lib/ui/theme";
 
 interface EdgeInspectorProps {
   diagram: Diagram;
@@ -21,10 +22,10 @@ export function EdgeInspector({ diagram, selectedEdgeId, onChange }: EdgeInspect
     <div style={panelStyle}>
       {isCacheEdge && (
         <>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
-            {targetKind === "cdn" ? "CDN edge" : "Cache edge"}
+          <div style={panelHeaderStyle}>
+            ▸ {targetKind === "cdn" ? "CDN EDGE" : "CACHE EDGE"}
           </div>
-          <label style={{ fontSize: 12, opacity: 0.7 }}>
+          <label style={{ fontFamily: fontFamily.mono, fontSize: 11, color: color.textMuted, letterSpacing: 0.5 }}>
             Hit rate: {Math.round((edge.cacheHitRate ?? 0) * 100)}%
           </label>
           <input
@@ -48,8 +49,8 @@ export function EdgeInspector({ diagram, selectedEdgeId, onChange }: EdgeInspect
       )}
       {isQueueEdge && (
         <>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Queue edge</div>
-          <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={panelHeaderStyle}>▸ QUEUE EDGE</div>
+          <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8, color: color.text }}>
             <input
               type="checkbox"
               checked={!!edge.dlq}
@@ -73,8 +74,16 @@ export function EdgeInspector({ diagram, selectedEdgeId, onChange }: EdgeInspect
 
 const panelStyle: React.CSSProperties = {
   padding: 12,
-  background: "#0b1020",
-  color: "#e5e7eb",
-  borderTop: "1px solid #1f2937",
+  background: "rgba(14, 26, 43, 0.92)",
+  color: color.text,
+  borderTop: `1px solid ${color.borderStrong}`,
   minWidth: 220,
+  fontFamily: fontFamily.body,
+};
+const panelHeaderStyle: React.CSSProperties = {
+  fontFamily: fontFamily.mono,
+  fontSize: 10,
+  letterSpacing: 2,
+  color: color.accent,
+  marginBottom: 8,
 };

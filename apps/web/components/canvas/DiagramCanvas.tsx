@@ -177,7 +177,7 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
           },
           label: "🔗",
           labelStyle: { fontSize: 10, fill: "#a855f7" },
-          labelBgStyle: { fill: "#0b1220", fillOpacity: 0.85 },
+          labelBgStyle: { fill: "#0e1a2b", fillOpacity: 0.85 },
           labelBgPadding: [2, 2],
           labelBgBorderRadius: 2,
           // Keep tether under semantic edges visually but above grid.
@@ -341,9 +341,10 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
         <MiniMap
           pannable
           zoomable
-          style={{ background: "#111827" }}
-          maskColor="rgba(11, 16, 32, 0.7)"
-          nodeColor={() => "#374151"}
+          style={{ background: "#0e1a2b", border: "1px solid #3a5e85" }}
+          maskColor="rgba(14, 26, 43, 0.7)"
+          nodeColor={() => "#7adfff"}
+          nodeStrokeColor="#3a5e85"
         />
         <ParticleLayer transitions={transitions} />
       </ReactFlow>

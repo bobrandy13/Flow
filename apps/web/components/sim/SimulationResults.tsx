@@ -3,6 +3,7 @@
 import type { TickFrame, ValidationReport } from "@flow/shared/types/validation";
 import { ticksToMs, formatSuccessRate, METRIC_EXPLAINERS } from "@flow/shared/engine/units";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { fontFamily, color } from "@/lib/ui/theme";
 
 interface SimulationResultsProps {
   report: ValidationReport | null;
@@ -33,7 +34,7 @@ export function SimulationResults({ report, nodeLabels, liveFrame, totalTicks }:
     <div style={panelStyle}>
       {report && (
         <>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Validation</div>
+          <div style={{ fontFamily: fontFamily.display, fontSize: 13, fontWeight: 700, marginBottom: 8, letterSpacing: 1.5, textTransform: "uppercase", color: color.accent, paddingBottom: 4, borderBottom: `1px dashed ${color.border}` }}>▸ VALIDATION</div>
           <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4 }}>
             {report.ruleResults.map((r, idx) => (
               <li
@@ -105,7 +106,7 @@ export function SimulationResults({ report, nodeLabels, liveFrame, totalTicks }:
 
       {report?.simulation && (
         <>
-          <div style={{ fontSize: 14, fontWeight: 700, margin: "12px 0 8px" }}>Simulation</div>
+          <div style={{ fontFamily: fontFamily.display, fontSize: 13, fontWeight: 700, margin: "14px 0 8px", letterSpacing: 1.5, textTransform: "uppercase", color: color.accent, paddingBottom: 4, borderBottom: `1px dashed ${color.border}` }}>▸ SIMULATION</div>
           <PassFailStamp passed={report.simulation.passed} />
           {report.simulation.failureReason && (
             <div style={{ fontSize: 12, color: "#ff5c5c", margin: "4px 0" }}>

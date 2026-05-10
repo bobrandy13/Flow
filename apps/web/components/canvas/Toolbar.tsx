@@ -1,5 +1,7 @@
 "use client";
 
+import { color, fontFamily } from "@/lib/ui/theme";
+
 interface ToolbarProps {
   onValidate: () => void;
   onReset: () => void;
@@ -14,6 +16,11 @@ interface ToolbarProps {
   runDisabledReason?: string;
 }
 
+/**
+ * Instrument-panel style toolbar — flat, uppercase, drop-shadowed buttons.
+ * Each button uses a coloured top stripe + flat inset shadow to feel like
+ * an industrial pushbutton.
+ */
 export function Toolbar({
   onValidate,
   onReset,
@@ -31,35 +38,41 @@ export function Toolbar({
         display: "flex",
         gap: 8,
         padding: "8px 12px",
-        borderBottom: "1px solid #1f2937",
-        background: "#0b1020",
+        borderBottom: `1px solid ${color.borderStrong}`,
+        background: "rgba(14, 26, 43, 0.92)",
         alignItems: "center",
       }}
     >
-      <button type="button" onClick={onValidate} style={btnStyle("#34d399")}>Validate</button>
-      <button
-        type="button"
+      <ToolButton onClick={onValidate} tone={color.success}>VALIDATE</ToolButton>
+      <ToolButton
         onClick={onRunSimulation}
+        tone={color.accent}
         disabled={runIsDisabled}
         title={runDisabled ? runDisabledReason : undefined}
-        aria-label={runDisabled ? runDisabledReason : "Run Simulation"}
-        style={btnStyle("#60a5fa", runIsDisabled)}
+        ariaLabel={runDisabled ? runDisabledReason : "Run Simulation"}
       >
-        {isSimulating ? "Simulating…" : "Run Simulation"}
-      </button>
+        {isSimulating ? "SIMULATING…" : "RUN SIMULATION"}
+      </ToolButton>
       {onExport && (
-        <button
-          type="button"
+        <ToolButton
           onClick={onExport}
+          tone={color.highlight}
           title="Copy this diagram to clipboard as JSON (no coordinates)"
-          style={btnStyle("#a78bfa")}
         >
-          📋 Export
-        </button>
+          📋 EXPORT
+        </ToolButton>
       )}
       {runDisabled && runDisabledReason && (
-        <span style={{ alignSelf: "center", fontSize: 12, opacity: 0.7, color: "#fcd34d" }}>
-          {runDisabledReason}
+        <span
+          style={{
+            alignSelf: "center",
+            fontFamily: fontFamily.mono,
+            fontSize: 11,
+            color: color.warning,
+            letterSpacing: 0.5,
+          }}
+        >
+          ⚠ {runDisabledReason}
         </span>
       )}
       <div style={{ flex: 1 }} />
@@ -67,32 +80,62 @@ export function Toolbar({
         <span
           role="status"
           style={{
-            fontSize: 12,
-            color: "#34d399",
-            background: "rgba(52,211,153,0.12)",
-            border: "1px solid rgba(52,211,153,0.35)",
-            borderRadius: 6,
+            fontFamily: fontFamily.mono,
+            fontSize: 11,
+            color: color.success,
+            background: "rgba(155, 227, 107, 0.10)",
+            border: `1px solid ${color.success}`,
             padding: "3px 10px",
+            letterSpacing: 0.5,
           }}
         >
-          {toast}
+          ✓ {toast}
         </span>
       )}
-      <button type="button" onClick={onReset} style={btnStyle("#f87171")}>Reset</button>
+      <ToolButton onClick={onReset} tone={color.danger}>RESET</ToolButton>
     </div>
   );
 }
 
-function btnStyle(color: string, disabled = false): React.CSSProperties {
-  return {
-    padding: "6px 14px",
-    borderRadius: 8,
-    border: "none",
-    background: color,
-    color: "#0b1020",
-    fontWeight: 600,
-    fontSize: 13,
-    cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.6 : 1,
-  };
+function ToolButton({
+  children,
+  onClick,
+  tone,
+  disabled,
+  title,
+  ariaLabel,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  tone: string;
+  disabled?: boolean;
+  title?: string;
+  ariaLabel?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-label={ariaLabel}
+      style={{
+        position: "relative",
+        padding: "6px 14px",
+        border: `1px solid ${tone}`,
+        background: tone,
+        color: color.accentInk,
+        fontFamily: fontFamily.display,
+        fontWeight: 700,
+        fontSize: 12,
+        letterSpacing: 1.5,
+        textTransform: "uppercase",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.5 : 1,
+        boxShadow: `2px 2px 0 0 rgba(14, 26, 43, 0.7)`,
+      }}
+    >
+      {children}
+    </button>
+  );
 }

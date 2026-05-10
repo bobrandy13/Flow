@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { color } from "@/lib/ui/theme";
 
 const STORAGE_KEY = "flow.inspectorWidth.v1";
 const DEFAULT_WIDTH = 320;
@@ -120,8 +121,8 @@ export function ResizableSidePanel({ children, storageKey = STORAGE_KEY }: Resiz
         display: "flex",
         flexDirection: "column",
         minWidth: collapsed ? COLLAPSED_WIDTH : MIN_WIDTH,
-        background: "#0b1020",
-        borderLeft: "1px solid #1f2937",
+        background: color.paper,
+        borderLeft: `1px solid ${color.borderStrong}`,
         transition: isDragging ? "none" : "width 0.18s ease",
       }}
     >
@@ -140,7 +141,7 @@ export function ResizableSidePanel({ children, storageKey = STORAGE_KEY }: Resiz
           width: 6,
           cursor: collapsed ? "default" : "ew-resize",
           zIndex: 5,
-          background: isDragging ? "rgba(96,165,250,0.4)" : "transparent",
+          background: isDragging ? color.accent : "transparent",
         }}
       />
       {/* Collapse / expand toggle */}
@@ -157,9 +158,9 @@ export function ResizableSidePanel({ children, storageKey = STORAGE_KEY }: Resiz
           width: 24,
           height: 24,
           borderRadius: "50%",
-          border: "1px solid #1f2937",
-          background: "#0b1020",
-          color: "#9ca3af",
+          border: `1px solid ${color.borderStrong}`,
+          background: color.paper,
+          color: color.accent,
           fontSize: 11,
           cursor: "pointer",
           zIndex: 6,

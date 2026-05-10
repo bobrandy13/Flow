@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { getLevel } from "@flow/shared/levels";
 import type { LessonBlock } from "@flow/shared/types/level";
 import { markLessonSeen } from "@/lib/storage/progress";
+import { color, fontFamily } from "@/lib/ui/theme";
 
 export default function LessonPage() {
   const params = useParams<{ id: string }>();
@@ -40,25 +41,83 @@ export default function LessonPage() {
   return (
     <div style={pageStyle}>
       <div style={containerStyle}>
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 20 }}>
           <Link href="/levels" style={breadcrumbLink}>
-            ← All levels
+            ← BACK TO DRAWING SET
           </Link>
         </div>
 
-        <header style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 11, opacity: 0.5, letterSpacing: 1, marginBottom: 4 }}>
-            CONCEPT · LEVEL {level.id}
+        {/* Drafting title block */}
+        <header
+          style={{
+            marginBottom: 28,
+            border: `1px solid ${color.borderStrong}`,
+            background: "rgba(14, 26, 43, 0.7)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "8px 14px",
+              borderBottom: `1px dashed ${color.border}`,
+              fontFamily: fontFamily.mono,
+              fontSize: 10,
+              letterSpacing: 2,
+              color: color.accent,
+              textTransform: "uppercase",
+              flexWrap: "wrap",
+              gap: 8,
+            }}
+          >
+            <span>SPECIFICATION · CONCEPT BRIEF</span>
+            <span style={{ opacity: 0.65 }}>DWG · {level.id.toUpperCase()}</span>
           </div>
-          <h1 style={{ margin: "0 0 10px", fontSize: 32, lineHeight: 1.2 }}>{level.title}</h1>
-          <p style={{ margin: 0, fontSize: 17, opacity: 0.85, color: "#a5b4fc" }}>
-            {lesson.tagline}
-          </p>
+          <div style={{ padding: "16px 18px" }}>
+            <h1
+              style={{
+                margin: "0 0 10px",
+                fontFamily: fontFamily.display,
+                fontSize: 30,
+                lineHeight: 1.1,
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                color: color.text,
+              }}
+            >
+              {level.title}
+            </h1>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 16,
+                lineHeight: 1.5,
+                color: color.accent,
+              }}
+            >
+              {lesson.tagline}
+            </p>
+          </div>
         </header>
 
         {lesson.sections.map((section, i) => (
           <section key={i} style={{ marginBottom: 28 }}>
-            <h2 style={{ fontSize: 18, margin: "0 0 12px", color: "#e5e7eb" }}>
+            <h2
+              style={{
+                fontFamily: fontFamily.display,
+                fontSize: 16,
+                margin: "0 0 12px",
+                color: color.text,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+                paddingBottom: 6,
+                borderBottom: `1px dashed ${color.border}`,
+              }}
+            >
+              <span style={{ color: color.accent, fontFamily: fontFamily.mono, fontSize: 11, marginRight: 8 }}>
+                §{(i + 1).toString().padStart(2, "0")}
+              </span>
               {section.heading}
             </h2>
             {section.blocks.map((block, j) => (
@@ -71,24 +130,32 @@ export default function LessonPage() {
           <section
             style={{
               marginTop: 32,
-              padding: "16px 20px",
-              borderRadius: 12,
-              border: "1px solid rgba(167, 139, 250, 0.3)",
-              background: "rgba(167, 139, 250, 0.06)",
+              border: `1px solid ${color.highlightSoftBorder}`,
+              background: color.highlightSoftBg,
             }}
           >
             <div
               style={{
-                fontSize: 11,
+                fontFamily: fontFamily.mono,
+                fontSize: 10,
                 fontWeight: 700,
-                letterSpacing: 1,
-                color: "#a78bfa",
-                marginBottom: 8,
+                letterSpacing: 2,
+                color: color.highlight,
+                padding: "8px 14px",
+                borderBottom: `1px dashed ${color.highlightSoftBorder}`,
               }}
             >
-              CHEATSHEET
+              ⚑ CHEATSHEET · QUICK REFERENCE
             </div>
-            <ul style={{ margin: 0, paddingLeft: 20, color: "#e5e7eb", fontSize: 14, lineHeight: 1.7 }}>
+            <ul
+              style={{
+                margin: 0,
+                padding: "12px 18px 14px 36px",
+                color: color.text,
+                fontSize: 14,
+                lineHeight: 1.7,
+              }}
+            >
               {lesson.cheatsheet.map((line, i) => (
                 <li key={i}>{line}</li>
               ))}
@@ -99,21 +166,35 @@ export default function LessonPage() {
         <div
           style={{
             marginTop: 36,
-            padding: "20px 24px",
-            borderRadius: 12,
-            border: "1px solid #1f2937",
-            background: "#0f172a",
+            border: `1px solid ${color.borderStrong}`,
+            background: "rgba(14, 26, 43, 0.7)",
           }}
         >
-          <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 6 }}>The exercise</div>
-          <p style={{ margin: "0 0 16px", fontSize: 14, lineHeight: 1.6 }}>{level.brief}</p>
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <Link href={`/levels/${level.id}/play`} style={btnPrimary}>
-              Start exercise →
-            </Link>
-            <Link href="/levels" style={{ ...btnSecondary, textDecoration: "none" }}>
-              Back to levels
-            </Link>
+          <div
+            style={{
+              padding: "8px 14px",
+              borderBottom: `1px dashed ${color.border}`,
+              fontFamily: fontFamily.mono,
+              fontSize: 10,
+              letterSpacing: 2,
+              color: color.accent,
+              textTransform: "uppercase",
+            }}
+          >
+            ▸ THE EXERCISE
+          </div>
+          <div style={{ padding: "16px 18px" }}>
+            <p style={{ margin: "0 0 16px", fontSize: 14, lineHeight: 1.6, color: color.text }}>
+              {level.brief}
+            </p>
+            <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              <Link href={`/levels/${level.id}/play`} style={btnPrimary}>
+                ▸ START EXERCISE
+              </Link>
+              <Link href="/levels" style={btnSecondary}>
+                BACK TO DRAWING SET
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -124,7 +205,7 @@ export default function LessonPage() {
 function LessonBlockView({ block }: { block: LessonBlock }) {
   if (block.type === "p") {
     return (
-      <p style={{ margin: "0 0 12px", fontSize: 14.5, lineHeight: 1.65, color: "#d1d5db" }}>
+      <p style={{ margin: "0 0 12px", fontSize: 14.5, lineHeight: 1.65, color: color.text }}>
         {block.text}
       </p>
     );
@@ -137,7 +218,7 @@ function LessonBlockView({ block }: { block: LessonBlock }) {
           paddingLeft: 22,
           fontSize: 14.5,
           lineHeight: 1.7,
-          color: "#d1d5db",
+          color: color.text,
         }}
       >
         {block.items.map((item, i) => (
@@ -146,68 +227,100 @@ function LessonBlockView({ block }: { block: LessonBlock }) {
       </ul>
     );
   }
-  const tones: Record<typeof block.tone, { border: string; bg: string; tag: string }> = {
-    info: { border: "rgba(96, 165, 250, 0.35)", bg: "rgba(96, 165, 250, 0.07)", tag: "#60a5fa" },
-    warn: { border: "rgba(251, 191, 36, 0.35)", bg: "rgba(251, 191, 36, 0.07)", tag: "#fbbf24" },
-    success: { border: "rgba(52, 211, 153, 0.35)", bg: "rgba(52, 211, 153, 0.07)", tag: "#34d399" },
+  const tones: Record<typeof block.tone, { border: string; bg: string; tag: string; label: string }> = {
+    info:    { border: "rgba(122, 223, 255, 0.45)", bg: "rgba(122, 223, 255, 0.08)", tag: color.accent,  label: "NOTE" },
+    warn:    { border: color.highlightSoftBorder,   bg: color.highlightSoftBg,        tag: color.warning, label: "CAUTION" },
+    success: { border: "rgba(155, 227, 107, 0.45)", bg: "rgba(155, 227, 107, 0.08)", tag: color.success, label: "APPROVED" },
   };
   const c = tones[block.tone];
   return (
     <div
       style={{
         margin: "10px 0 14px",
-        padding: "12px 14px",
-        borderRadius: 8,
         border: `1px solid ${c.border}`,
         background: c.bg,
       }}
     >
-      {block.title && (
-        <div style={{ fontSize: 12, fontWeight: 700, color: c.tag, marginBottom: 4 }}>
-          {block.title}
-        </div>
-      )}
-      <div style={{ fontSize: 14, lineHeight: 1.6, color: "#e5e7eb" }}>{block.text}</div>
+      <div
+        style={{
+          padding: "4px 10px",
+          fontFamily: fontFamily.mono,
+          fontSize: 10,
+          letterSpacing: 2,
+          color: c.tag,
+          borderBottom: `1px dashed ${c.border}`,
+        }}
+      >
+        ⚑ {c.label}
+      </div>
+      <div style={{ padding: "10px 14px" }}>
+        {block.title && (
+          <div
+            style={{
+              fontFamily: fontFamily.display,
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              color: c.tag,
+              marginBottom: 4,
+            }}
+          >
+            {block.title}
+          </div>
+        )}
+        <div style={{ fontSize: 14, lineHeight: 1.6, color: color.text }}>{block.text}</div>
+      </div>
     </div>
   );
 }
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
-  background: "#0b1020",
-  color: "#e5e7eb",
+  color: color.text,
   padding: "32px 24px 64px",
 };
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: 760,
+  maxWidth: 780,
   margin: "0 auto",
 };
 
 const breadcrumbLink: React.CSSProperties = {
-  fontSize: 12,
-  color: "#9ca3af",
+  fontFamily: fontFamily.mono,
+  fontSize: 11,
+  letterSpacing: 1.5,
+  color: color.accent,
   textDecoration: "none",
 };
 
 const btnPrimary: React.CSSProperties = {
-  display: "inline-block",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
   padding: "10px 18px",
-  borderRadius: 8,
-  background: "#60a5fa",
-  color: "#0b1020",
+  background: color.accent,
+  color: color.accentInk,
+  fontFamily: fontFamily.display,
   fontWeight: 700,
-  fontSize: 14,
+  fontSize: 13,
+  letterSpacing: 2,
   textDecoration: "none",
+  textTransform: "uppercase",
+  border: `1px solid ${color.accent}`,
+  boxShadow: `3px 3px 0 0 ${color.borderStrong}`,
 };
 
 const btnSecondary: React.CSSProperties = {
   display: "inline-block",
   padding: "10px 18px",
-  borderRadius: 8,
-  border: "1px solid #1f2937",
+  border: `1px solid ${color.borderStrong}`,
   background: "transparent",
-  color: "#e5e7eb",
-  fontSize: 14,
+  color: color.text,
+  fontFamily: fontFamily.display,
+  fontSize: 12,
+  letterSpacing: 2,
+  textTransform: "uppercase",
+  textDecoration: "none",
   cursor: "pointer",
 };
