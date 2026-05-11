@@ -76,6 +76,49 @@ body {
   transform: translateY(0);
 }
 
+/*
+ * Frosted card panel — semi-transparent with backdrop blur so the grid
+ * shows through at reduced intensity. Used on curriculum / landing cards.
+ */
+.flow-panel {
+  background: rgba(14, 26, 43, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid #3a5e85;
+}
+
+/*
+ * Content zone overlay — dims the grid behind the central reading
+ * column so text sits on a calmer surface. Applied to the max-width
+ * wrapper on long-form pages.
+ */
+.flow-content-zone {
+  position: relative;
+}
+.flow-content-zone::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  /* center a strip that matches the content max-width + generous bleed */
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1060px, 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(14, 26, 43, 0.55) 8%,
+    rgba(14, 26, 43, 0.55) 92%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+.flow-content-zone > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* Brief flash when a node drops requests during the live simulation. */
 @keyframes flow-node-drop-pulse {
   0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
@@ -84,4 +127,26 @@ body {
 }
 .flow-node--drop-pulse {
   animation: flow-node-drop-pulse 500ms ease-out;
+}
+
+/* Glossary tooltip fade-in */
+@keyframes glossaryFadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Glossary term inline highlight */
+.glossary-term {
+  position: relative;
+  display: inline;
+  border-bottom: 1.5px dotted rgba(122, 223, 255, 0.45);
+  cursor: help;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.glossary-term:hover,
+.glossary-term:focus {
+  border-bottom-color: rgba(122, 223, 255, 0.85);
+  background-color: rgba(122, 223, 255, 0.06);
+  border-radius: 2px;
+  outline: none;
 }

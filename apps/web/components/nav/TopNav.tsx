@@ -22,7 +22,74 @@ export function TopNav() {
   const pathname = usePathname();
   const progress = useProgress();
 
-  if (pathname?.includes("/play")) return null;
+  const isPlay = pathname?.includes("/play");
+  const isLesson = pathname?.includes("/lesson");
+  const isInLevel = isPlay || isLesson;
+
+  // Extract level id from /levels/[id]/play or /levels/[id]/lesson
+  const levelId = isInLevel ? pathname?.split("/")[2] : null;
+  const level = levelId ? LEVELS.find((l) => l.id === levelId) : null;
+
+  if (isPlay) {
+    // Compact sticky bar on play pages — just back + level title
+    return (
+      <nav
+        aria-label="Level navigation"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          padding: "6px 16px",
+          background: "rgba(14, 26, 43, 0.92)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          borderBottom: `1px solid ${color.borderStrong}`,
+          color: color.text,
+          fontSize: 12,
+        }}
+      >
+        <Link
+          href="/levels"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            color: color.accent,
+            textDecoration: "none",
+            fontFamily: fontFamily.mono,
+            fontSize: 11,
+            letterSpacing: 1,
+            padding: "4px 10px",
+            border: `1px solid ${color.borderStrong}`,
+            borderRadius: 3,
+            background: "rgba(122, 223, 255, 0.06)",
+          }}
+        >
+          ← All Levels
+        </Link>
+        {level && (
+          <span
+            style={{
+              fontFamily: fontFamily.display,
+              fontWeight: 700,
+              letterSpacing: 2,
+              fontSize: 13,
+              textTransform: "uppercase",
+              color: color.text,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {level.title}
+          </span>
+        )}
+      </nav>
+    );
+  }
 
   const total = LEVELS.length;
   const done = LEVELS.filter((l) => progress[l.id]?.completed).length;
@@ -88,7 +155,10 @@ export function TopNav() {
         </span>
       </Link>
       <NavLink href="/levels" active={pathname === "/levels"}>
-        Drawings
+        Levels
+      </NavLink>
+      <NavLink href="/sandbox" active={pathname === "/sandbox"}>
+        Sandbox
       </NavLink>
       <div style={{ flex: 1 }} />
       <Link

@@ -100,7 +100,7 @@ export default function LevelsPage() {
 
   return (
     <div style={{ minHeight: "100vh", color: color.text, padding: "32px 24px 64px" }}>
-      <div style={{ maxWidth: 920, margin: "0 auto" }}>
+      <div className="flow-content-zone" style={{ maxWidth: 920, margin: "0 auto" }}>
         {/* Drawing set masthead */}
         <div
           style={{
@@ -111,7 +111,7 @@ export default function LevelsPage() {
             marginBottom: 4,
           }}
         >
-          DRAWING SET · INDEX
+          FLOW · CURRICULUM
         </div>
         <h1
           style={{
@@ -124,7 +124,7 @@ export default function LevelsPage() {
         >
           System Design Curriculum
         </h1>
-        <p style={{ color: color.textMuted, fontSize: 14, marginBottom: 28 }}>
+        <p style={{ color: color.textMuted, fontSize: 15, marginBottom: 28, lineHeight: 1.55 }}>
           Build the diagram. Pass the rules. Survive the simulation.
         </p>
 
@@ -258,7 +258,7 @@ export default function LevelsPage() {
                   </span>
                 )}
               </div>
-              <p style={{ fontSize: 12, color: color.textMuted, margin: "0 0 6px" }}>
+              <p style={{ fontSize: 13, color: color.textMuted, margin: "0 0 6px", lineHeight: 1.5 }}>
                 {CHAPTER_BLURBS[chapter]}
               </p>
               {!unlocked && (
@@ -331,10 +331,9 @@ function ProgressStamp({
   return (
     <section
       aria-label="Overall progress"
+      className="flow-panel"
       style={{
         position: "relative",
-        background: "rgba(14, 26, 43, 0.7)",
-        border: `1px solid ${color.borderStrong}`,
         padding: 16,
         marginBottom: 24,
         display: "flex",
@@ -362,7 +361,7 @@ function ProgressStamp({
             color: color.text,
           }}
         >
-          PROJECT STATUS
+          YOUR PROGRESS
         </div>
         <div
           style={{
@@ -399,7 +398,7 @@ function ProgressStamp({
             letterSpacing: 1.5,
           }}
         >
-          SHEETS<br />COMPLETE
+          LEVELS<br />COMPLETE
         </div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div
@@ -456,7 +455,7 @@ function LevelRow({
   const href = showLessonFirst
     ? `/levels/${level.id}/lesson`
     : `/levels/${level.id}/play`;
-  const sheet = `SHT ${(idx + 1).toString().padStart(2, "0")} / ${total.toString().padStart(2, "0")}`;
+  const sheet = `LEVEL ${(idx + 1).toString().padStart(2, "0")} / ${total.toString().padStart(2, "0")}`;
 
   return (
     <li>
@@ -467,7 +466,9 @@ function LevelRow({
           alignItems: "stretch",
           gap: 0,
           border: `1px solid ${color.borderStrong}`,
-          background: "rgba(19, 36, 58, 0.6)",
+          background: "rgba(19, 36, 58, 0.75)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
           color: color.text,
           textDecoration: "none",
           fontFamily: fontFamily.body,
@@ -545,7 +546,7 @@ function LevelRow({
               </span>
             )}
           </div>
-          <div style={{ fontSize: 13, color: color.textMuted, marginTop: 4, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 14, color: color.textMuted, marginTop: 4, lineHeight: 1.55 }}>
             {level.brief}
           </div>
           {progress?.bestMetrics && (

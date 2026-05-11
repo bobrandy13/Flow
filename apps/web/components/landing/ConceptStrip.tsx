@@ -25,10 +25,9 @@ export function ConceptStrip() {
   return (
     <section
       aria-label="How it works"
+      className="flow-panel"
       style={{
         marginTop: 40,
-        border: `1px solid ${color.borderStrong}`,
-        background: "rgba(14, 26, 43, 0.65)",
         position: "relative",
       }}
     >
@@ -46,8 +45,8 @@ export function ConceptStrip() {
           justifyContent: "space-between",
         }}
       >
-        <span>Schedule · Construction Sequence</span>
-        <span style={{ opacity: 0.6 }}>SHT 00 / 03</span>
+        <span>HOW IT WORKS</span>
+        <span style={{ opacity: 0.6 }}>STEP 00 / 03</span>
       </div>
       <div
         style={{
@@ -88,7 +87,7 @@ export function ConceptStrip() {
             >
               {s.title}
             </div>
-            <div style={{ fontSize: 12, color: color.textMuted, lineHeight: 1.55 }}>
+            <div style={{ fontSize: 13, color: color.textMuted, lineHeight: 1.55 }}>
               {s.body}
             </div>
           </div>

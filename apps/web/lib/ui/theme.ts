@@ -24,8 +24,8 @@ export const color = {
 
   // Type
   text: "#f5efd6",
-  textMuted: "rgba(245, 239, 214, 0.65)",
-  textSubtle: "rgba(245, 239, 214, 0.45)",
+  textMuted: "rgba(245, 239, 214, 0.75)",
+  textSubtle: "rgba(245, 239, 214, 0.55)",
 
   // Accent (cyan — measurements, primary action, completion check)
   accent: "#7adfff",

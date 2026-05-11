@@ -18,31 +18,33 @@ import { canSimulate, diagramSimulatabilityIssue } from "@flow/shared/engine/sim
 import { exportDiagramJson } from "@flow/shared/engine/export-diagram";
 import { buildSimulationLogs } from "@flow/shared/engine/simulation-logs";
 import { useSimulation } from "@/lib/hooks/useSimulation";
+import { useDiagramEditor } from "@/lib/hooks/useDiagramEditor";
 import { recordAttempt, recordCompletion } from "@/lib/storage/progress";
-import { DEFAULT_FAN_OUT, COMPONENT_SPECS } from "@flow/shared/engine/component-specs";
+import { COMPONENT_SPECS } from "@flow/shared/engine/component-specs";
 import { ticksToMs, formatSuccessRate } from "@flow/shared/engine/units";
 
 import type { ComponentKind } from "@flow/shared/types/components";
-import type { Diagram, DiagramNode } from "@flow/shared/types/diagram";
-import { emptyDiagram } from "@flow/shared/types/diagram";
 import type { ValidationReport } from "@flow/shared/types/validation";
 import { color, fontFamily } from "@/lib/ui/theme";
-
-function uid(prefix: string) {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
-  }
-  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
-}
 
 export default function PlayPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const level = getLevel(params.id);
 
-  const [diagram, setDiagram] = useState<Diagram>(emptyDiagram);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>();
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | undefined>();
+  const {
+    diagram,
+    setDiagram,
+    handleDiagramChange,
+    snapshotForUndo,
+    addNode,
+    handleReset: resetDiagram,
+    selectedNodeId,
+    setSelectedNodeId,
+    selectedEdgeId,
+    setSelectedEdgeId,
+  } = useDiagramEditor({ maxOf: level?.maxOf });
+
   const [baseReport, setBaseReport] = useState<ValidationReport | null>(null);
 
   // Build the SimulationInput (or null when prerequisites aren't met). We
@@ -67,28 +69,6 @@ export default function PlayPage() {
     if (sim.outcome) return { ...baseReport, simulation: sim.outcome };
     return baseReport;
   }, [baseReport, sim.outcome]);
-
-  const addNode = useCallback(
-    (kind: ComponentKind, position?: { x: number; y: number }) => {
-      if (!level) return;
-      const cap = level.maxOf?.[kind];
-      if (cap !== undefined) {
-        const count = diagram.nodes.filter((n) => n.kind === kind).length;
-        if (count >= cap) return;
-      }
-      const node: DiagramNode = {
-        id: uid("n"),
-        kind,
-        position: position ?? {
-          x: 80 + diagram.nodes.length * 40,
-          y: 80 + (diagram.nodes.length % 5) * 40,
-        },
-        config: kind === "load_balancer" ? { fanOut: DEFAULT_FAN_OUT } : undefined,
-      };
-      setDiagram((d) => ({ nodes: [...d.nodes, node], edges: d.edges }));
-    },
-    [diagram.nodes, level],
-  );
 
   const handleAdd = useCallback((kind: ComponentKind) => addNode(kind), [addNode]);
   const handleDropComponent = useCallback(
@@ -139,12 +119,10 @@ export default function PlayPage() {
   }, [sim.outcome, level, diagram, baseReport]);
 
   const handleReset = useCallback(() => {
-    setDiagram(emptyDiagram());
+    resetDiagram();
     setBaseReport(null);
-    setSelectedNodeId(undefined);
-    setSelectedEdgeId(undefined);
     sim.reset();
-  }, [sim]);
+  }, [resetDiagram, sim]);
 
   const [toast, setToast] = useState<string | null>(null);
   const flashToast = useCallback((msg: string) => {
@@ -250,7 +228,7 @@ export default function PlayPage() {
                 📖 CONCEPT
               </Link>
             )}
-            <Link href="/levels" style={{ fontFamily: fontFamily.mono, fontSize: 11, color: color.accent, letterSpacing: 1, textDecoration: "none" }}>← DRAWING SET</Link>
+            <Link href="/levels" style={{ fontFamily: fontFamily.mono, fontSize: 11, color: color.accent, letterSpacing: 1, textDecoration: "none" }}>← All Levels</Link>
           </div>
         </div>
       </div>
@@ -270,7 +248,7 @@ export default function PlayPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: color.paper }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 37px)", background: color.paper }}>
       {briefBlock}
       <Toolbar
         onValidate={handleValidate}
@@ -411,6 +389,7 @@ export default function PlayPage() {
           <DiagramCanvas
             diagram={diagram}
             onChange={setDiagram}
+            onHistorySnapshot={snapshotForUndo}
             onDropComponent={handleDropComponent}
             runtimeByNodeId={sim.frame?.perNode}
             transitions={sim.frame?.transitions}
@@ -426,9 +405,9 @@ export default function PlayPage() {
               diagram={diagram}
               selectedNodeId={selectedNodeId}
               runtime={selectedNodeId ? sim.frame?.perNode[selectedNodeId] : undefined}
-              onChange={setDiagram}
+              onChange={handleDiagramChange}
             />
-            <EdgeInspector diagram={diagram} selectedEdgeId={selectedEdgeId} onChange={setDiagram} />
+            <EdgeInspector diagram={diagram} selectedEdgeId={selectedEdgeId} onChange={handleDiagramChange} />
             <SimulationResults
               report={report}
               nodeLabels={nodeLabels}

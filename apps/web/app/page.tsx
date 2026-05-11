@@ -19,7 +19,7 @@ export default function Home() {
         padding: "48px 24px 64px",
       }}
     >
-      <main style={{ maxWidth: 760, margin: "0 auto", textAlign: "center" }}>
+      <main className="flow-content-zone" style={{ maxWidth: 760, margin: "0 auto", textAlign: "center" }}>
         {/* Drawing-stamp eyebrow */}
         <div
           style={{
@@ -35,7 +35,7 @@ export default function Home() {
             background: "rgba(122, 223, 255, 0.06)",
           }}
         >
-          <span>DRAWING NO. 001</span>
+          <span>EXERCISE 001</span>
           <span style={{ opacity: 0.5 }}>·</span>
           <span>REV A</span>
           <span style={{ opacity: 0.5 }}>·</span>

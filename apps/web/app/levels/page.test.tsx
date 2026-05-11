@@ -34,9 +34,9 @@ describe("LevelsPage chapters", () => {
 
   it("renders the progress header and reset link", () => {
     render(<LevelsPage />);
-    // Progress header is now styled as a "PROJECT STATUS" / "SHEETS COMPLETE" stamp.
-    expect(screen.getByText(/PROJECT STATUS/i)).toBeTruthy();
-    expect(screen.getByText(/SHEETS/i)).toBeTruthy();
+    // Progress header is styled as a "YOUR PROGRESS" / "LEVELS COMPLETE" stamp.
+    expect(screen.getByText(/YOUR PROGRESS/i)).toBeTruthy();
+    expect(screen.getByText(/LEVELS/i)).toBeTruthy();
     expect(screen.getByRole("progressbar")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Reset all progress/i })).toBeTruthy();
   });

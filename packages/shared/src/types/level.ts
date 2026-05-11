@@ -47,7 +47,7 @@ export interface SLA {
   maxP95Latency: number;
 }
 
-/** Body block within a lesson section — short paragraphs or bullet lists. */
+/** Body block within a lesson section. */
 export type LessonBlock =
   | { type: "p"; text: string }
   | { type: "bullets"; items: string[] }
@@ -56,6 +56,16 @@ export type LessonBlock =
       type: "callout";
       tone: "info" | "warn" | "success";
       title?: string;
+      text: string;
+    }
+  | {
+      /** Term definitions — rendered as a styled definition list. */
+      type: "definitions";
+      items: { term: string; description: string }[];
+    }
+  | {
+      /** Code/terminal snippet — rendered as a monospace block. */
+      type: "code";
       text: string;
     };
 

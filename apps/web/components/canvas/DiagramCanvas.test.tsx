@@ -117,7 +117,8 @@ describe("DiagramCanvas source-level invariants", () => {
     expect(src).toMatch(/selectedNodesRef/);
     expect(src).toMatch(/selectedEdgesRef/);
     expect(src).toMatch(/selected:\s*selectedNodes\.has/);
-    expect(src).toMatch(/selected:\s*selectedEdges\.has/);
+    // Edge selection may use a cached variable (isSelected) derived from selectedEdges.
+    expect(src).toMatch(/selectedEdges\.has/);
   });
 });
 
@@ -180,5 +181,69 @@ describe("DiagramCanvas dimensions handling", () => {
       );
     });
     expect(container.querySelectorAll(".react-flow__node").length).toBe(1);
+  });
+});
+
+/**
+ * Regression: clicking the ✕ button on an edge MUST remove the edge from
+ * the diagram. The unit-level click → onDelete contract is tested in
+ * `edges/DeletableEdge.test.tsx` (RF can't render edges in jsdom — nodes
+ * stay visibility:hidden until measured). Here we test the canvas-level
+ * wiring with source-level invariants so the contract can't silently break.
+ */
+describe("DiagramCanvas edge deletion wiring", () => {
+  const src = readFileSync(join(__dirname, "DiagramCanvas.tsx"), "utf8");
+
+  it("registers the deletable edge type", () => {
+    expect(src).toMatch(/edgeTypes\s*[:=][^;]*deletable\s*:\s*DeletableEdge/);
+    expect(src).toMatch(/edgeTypes=\{edgeTypes\}/);
+  });
+
+  it("sets every edge type to 'deletable'", () => {
+    expect(src).toMatch(/type:\s*["']deletable["']/);
+  });
+
+  it("injects an onDelete callback into edge data", () => {
+    expect(src).toMatch(/onDelete:\s*handleDeleteEdge/);
+  });
+
+  it("handleDeleteEdge filters the edge out and calls onChange", () => {
+    expect(src).toMatch(/handleDeleteEdge[\s\S]{0,400}edges:\s*diagram\.edges\.filter[\s\S]{0,80}edge\.id\s*!==\s*edgeId/);
+    expect(src).toMatch(/handleDeleteEdge[\s\S]{0,500}onChange\(/);
+  });
+});
+
+/**
+ * Regression: undo (Cmd/Ctrl+Z) must restore the previous diagram state,
+ * and dragging a node must produce ONE undo step (not one per pixel).
+ *
+ * The undo logic moved to useDiagramEditor hook — tests verify the hook
+ * source AND that the play page correctly wires the hook's outputs.
+ */
+describe("play page undo wiring", () => {
+  const playSrc = readFileSync(
+    join(__dirname, "../../app/levels/[id]/play/page.tsx"),
+    "utf8",
+  );
+  const hookSrc = readFileSync(
+    join(__dirname, "../../lib/hooks/useDiagramEditor.ts"),
+    "utf8",
+  );
+  it("listens for Cmd/Ctrl+Z keydown (in the hook)", () => {
+    expect(hookSrc).toMatch(/metaKey[\s\S]{0,20}ctrlKey/);
+    expect(hookSrc).toMatch(/key\s*===\s*["']z["']/);
+  });
+  it("snapshots before structural changes via onHistorySnapshot", () => {
+    expect(playSrc).toMatch(/snapshotForUndo/);
+    expect(playSrc).toMatch(/onHistorySnapshot=\{snapshotForUndo\}/);
+  });
+  it("does NOT push history on raw position updates", () => {
+    // The DiagramCanvas onChange must be the raw setDiagram, not the
+    // history-wrapped handleDiagramChange — otherwise every drag pixel
+    // becomes a separate undo step.
+    expect(playSrc).toMatch(/<DiagramCanvas[\s\S]{0,500}onChange=\{setDiagram\}/);
+  });
+  it("clears history on reset (in the hook)", () => {
+    expect(hookSrc).toMatch(/handleReset[\s\S]{0,300}historyRef\.current\s*=\s*\[\]/);
   });
 });

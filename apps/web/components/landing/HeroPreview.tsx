@@ -34,11 +34,10 @@ export function HeroPreview() {
 
   return (
     <figure
+      className="flow-panel"
       style={{
         margin: "0 auto",
         maxWidth: 460,
-        border: `1px solid ${color.borderStrong}`,
-        background: "rgba(14, 26, 43, 0.55)",
         position: "relative",
         padding: 8,
       }}
@@ -57,7 +56,7 @@ export function HeroPreview() {
           marginBottom: 4,
         }}
       >
-        <span>DWG · 001 — REQUEST PATH</span>
+        <span>EXERCISE 001 — REQUEST PATH</span>
         <span>SCALE 1:1</span>
       </div>
 

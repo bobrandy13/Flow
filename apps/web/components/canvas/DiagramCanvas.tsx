@@ -13,6 +13,7 @@ import {
   type Connection,
   type Edge,
   type EdgeChange,
+  type EdgeTypes,
   type Node,
   type NodeChange,
   type NodeTypes,
@@ -24,6 +25,7 @@ import type { ComponentKind } from "@flow/shared/types/components";
 import type { EdgeTransition, NodeRuntimeSnapshot } from "@flow/shared/types/validation";
 import { COMPONENT_KINDS } from "@flow/shared/types/components";
 import { ComponentNode, type ComponentNodeData } from "./nodes/ComponentNode";
+import { DeletableEdge, type DeletableEdgeData } from "./edges/DeletableEdge";
 import { ParticleLayer } from "./ParticleLayer";
 import { DEFAULT_CACHE_HIT_RATE } from "@flow/shared/engine/component-specs";
 
@@ -33,6 +35,8 @@ interface DiagramCanvasProps {
   onSelectionChange?: (sel: { nodeId?: string; edgeId?: string }) => void;
   /** Called when a palette item is dropped onto the canvas. */
   onDropComponent?: (kind: ComponentKind, position: Position) => void;
+  /** Called once before a structural change (connect, delete) or drag-start so the parent can snapshot for undo. */
+  onHistorySnapshot?: () => void;
   /** Per-node live runtime snapshots (from streaming sim). */
   runtimeByNodeId?: Record<string, NodeRuntimeSnapshot>;
   /** Latest tick's edge transitions (from streaming sim). */
@@ -42,6 +46,7 @@ interface DiagramCanvasProps {
 export const PALETTE_DRAG_MIME = "application/x-flow-component";
 
 const nodeTypes: NodeTypes = { component: ComponentNode };
+const edgeTypes: EdgeTypes = { deletable: DeletableEdge };
 
 function isComponentKind(s: string): s is ComponentKind {
   return (COMPONENT_KINDS as readonly string[]).includes(s);
@@ -59,7 +64,7 @@ function toRfEdge(
   const cacheLabel = targetIsCache && e.cacheHitRate != null
     ? `hit ${Math.round(e.cacheHitRate * 100)}%`
     : undefined;
-  const label = crossRegion
+  const midLabel = crossRegion
     ? cacheLabel
       ? `${cacheLabel} · +80ms`
       : "+80ms"
@@ -68,16 +73,19 @@ function toRfEdge(
     id: e.id,
     source: e.fromNodeId,
     target: e.toNodeId,
-    label,
+    type: "deletable",
     animated: false,
     style: crossRegion
       ? { strokeDasharray: "6 4", stroke: "#a855f7", strokeWidth: 1.5 }
       : undefined,
-    labelStyle: crossRegion ? { fill: "#a855f7", fontWeight: 600 } : undefined,
+    data: {
+      midLabel,
+      midLabelStyle: crossRegion ? { color: "#a855f7", fontWeight: 600 } : undefined,
+    } satisfies DeletableEdgeData,
   };
 }
 
-function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropComponent, runtimeByNodeId, transitions }: DiagramCanvasProps) {
+function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropComponent, onHistorySnapshot, runtimeByNodeId, transitions }: DiagramCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
   /**
@@ -102,6 +110,17 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
   const regionOf = useCallback(
     (id: string) => diagram.nodes.find((n) => n.id === id)?.region,
     [diagram.nodes],
+  );
+
+  const handleDeleteEdge = useCallback(
+    (edgeId: string) => {
+      onHistorySnapshot?.();
+      onChange({
+        nodes: diagram.nodes,
+        edges: diagram.edges.filter((edge) => edge.id !== edgeId),
+      });
+    },
+    [diagram.nodes, diagram.edges, onChange, onHistorySnapshot],
   );
 
   // We deliberately read measuredRef during render: we need to re-attach the
@@ -133,10 +152,22 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
   const activeEdgeIds = new Set<string>();
   if (transitions) for (const t of transitions) activeEdgeIds.add(t.edgeId);
   for (const e of diagram.edges) {
+    const base = toRfEdge(e, kindOf, regionOf);
+    const isSelected = selectedEdges.has(e.id);
+    const baseData = (base.data ?? {}) as DeletableEdgeData;
     rfEdges.push({
-      ...toRfEdge(e, kindOf, regionOf),
-      selected: selectedEdges.has(e.id),
+      ...base,
+      selected: isSelected,
       animated: activeEdgeIds.has(e.id),
+      data: { ...baseData, onDelete: handleDeleteEdge } satisfies DeletableEdgeData,
+      ...(isSelected && {
+        style: {
+          ...base.style,
+          stroke: "#38bdf8",
+          strokeWidth: 3,
+          filter: "drop-shadow(0 0 5px #38bdf8)",
+        },
+      }),
     });
   }
   // Synthetic "tether" edges: dashed lines between members of the same
@@ -213,6 +244,11 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
       );
       if (meaningful.length === 0) return;
 
+      // Snapshot for undo before node removals (position changes are
+      // handled via onNodeDragStart instead).
+      const hasRemoves = meaningful.some((c) => c.type === "remove");
+      if (hasRemoves) onHistorySnapshot?.();
+
       // Build a minimal input for applyNodeChanges from diagram.nodes (NOT
       // rfNodes) so this callback doesn't need to re-create on every render.
       const input: Node<ComponentNodeData>[] = diagram.nodes.map((n) => ({
@@ -241,22 +277,28 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
         : diagram.edges;
       onChange({ nodes: nextNodes, edges: nextEdges });
     },
-    [diagram.edges, diagram.nodes, onChange],
+    [diagram.edges, diagram.nodes, onChange, onHistorySnapshot],
   );
 
   const handleEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
+      // Filter out pure RF-internal churn (select) — same pattern as handleNodesChange.
+      const meaningful = changes.filter(
+        (c) => c.type === "remove" || c.type === "add" || c.type === "replace",
+      );
+      if (meaningful.length === 0) return;
+      onHistorySnapshot?.();
       const input: Edge[] = diagram.edges.map((e) => ({
         id: e.id,
         source: e.fromNodeId,
         target: e.toNodeId,
       }));
-      const updated = applyEdgeChanges(changes, input);
+      const updated = applyEdgeChanges(meaningful, input);
       const survivingIds = new Set(updated.map((e) => e.id));
       const nextEdges = diagram.edges.filter((e) => survivingIds.has(e.id));
       onChange({ nodes: diagram.nodes, edges: nextEdges });
     },
-    [diagram.edges, diagram.nodes, onChange],
+    [diagram.edges, diagram.nodes, onChange, onHistorySnapshot],
   );
 
   const handleConnect = useCallback(
@@ -264,6 +306,7 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
       if (!conn.source || !conn.target || conn.source === conn.target) return;
       const exists = diagram.edges.some((e) => e.fromNodeId === conn.source && e.toNodeId === conn.target);
       if (exists) return;
+      onHistorySnapshot?.();
       const newEdge: DiagramEdge = {
         id: `e_${Math.random().toString(36).slice(2, 9)}`,
         fromNodeId: conn.source,
@@ -272,7 +315,7 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
       };
       onChange({ nodes: diagram.nodes, edges: [...diagram.edges, newEdge] });
     },
-    [diagram.edges, diagram.nodes, kindOf, onChange],
+    [diagram.edges, diagram.nodes, kindOf, onChange, onHistorySnapshot],
   );
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
@@ -328,11 +371,13 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
         nodes={rfNodes}
         edges={rfEdges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         colorMode="dark"
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
         onSelectionChange={handleSelectionChange}
+        onNodeDragStart={() => onHistorySnapshot?.()}
         fitView
         deleteKeyCode={["Backspace", "Delete"]}
       >
