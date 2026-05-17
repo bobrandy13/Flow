@@ -29,6 +29,30 @@ describe("glossary terms", () => {
     }
   });
 
+  it("every entry has category, eli5, and whenToUse", () => {
+    const validCategories = ["component", "concept", "pattern"];
+    for (const [key, entry] of Object.entries(GLOSSARY)) {
+      expect(entry.eli5, `${key} missing .eli5`).toBeTruthy();
+      expect(entry.category, `${key} missing .category`).toBeTruthy();
+      expect(
+        validCategories,
+        `${key} has invalid category "${entry.category}"`,
+      ).toContain(entry.category);
+      expect(
+        Array.isArray(entry.whenToUse),
+        `${key} .whenToUse should be an array`,
+      ).toBe(true);
+      expect(
+        entry.whenToUse.length,
+        `${key} .whenToUse should have 2–4 items`,
+      ).toBeGreaterThanOrEqual(2);
+      expect(
+        entry.whenToUse.length,
+        `${key} .whenToUse should have 2–4 items`,
+      ).toBeLessThanOrEqual(4);
+    }
+  });
+
   it("GLOSSARY_PATTERNS are sorted longest-first to avoid partial matches", () => {
     for (let i = 1; i < GLOSSARY_PATTERNS.length; i++) {
       expect(GLOSSARY_PATTERNS[i - 1].key.length).toBeGreaterThanOrEqual(

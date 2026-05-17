@@ -6,9 +6,12 @@ import type { GlossaryEntry } from "@/lib/glossary/terms";
 
 const mockEntry: GlossaryEntry = {
   term: "Load Balancer",
+  eli5: "A traffic cop that splits incoming requests evenly across multiple servers.",
   definition: "Distributes requests across servers.",
   relevance: "Essential for horizontal scaling.",
   analogy: "Like a restaurant host seating guests.",
+  category: "component",
+  whenToUse: ["You have multiple backend servers", "You need to remove servers without downtime"],
 };
 
 describe("GlossaryTerm", () => {
@@ -49,8 +52,11 @@ describe("GlossaryTerm", () => {
   it("works without an analogy", () => {
     const entryNoAnalogy: GlossaryEntry = {
       term: "Throughput",
+      eli5: "How many requests your system can handle per second at full capacity.",
       definition: "Requests per second.",
       relevance: "Measures capacity.",
+      category: "concept",
+      whenToUse: ["Identifying your throughput bottleneck"],
     };
     render(<GlossaryTerm entry={entryNoAnalogy} matchedText="throughput" />);
     fireEvent.mouseEnter(screen.getByText("throughput"));
