@@ -19,8 +19,12 @@ describe("lessons", () => {
             expect(["info", "warn", "success"]).toContain(block.tone);
           } else if (block.type === "bullets") {
             expect(block.items.length).toBeGreaterThan(0);
+          } else if (block.type === "definitions") {
+            expect(block.items.length).toBeGreaterThan(0);
+          } else if (block.type === "prereq") {
+            expect(block.items.length).toBeGreaterThan(0);
           } else {
-            expect(block.text.length).toBeGreaterThan(0);
+            expect((block as { text: string }).text.length).toBeGreaterThan(0);
           }
         }
       }

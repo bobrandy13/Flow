@@ -9,6 +9,7 @@ import type { LessonBlock } from "@flow/shared/types/level";
 import { markLessonSeen } from "@/lib/storage/progress";
 import { color, fontFamily } from "@/lib/ui/theme";
 import { processGlossaryText } from "@/lib/glossary/processText";
+import { PrereqCallout } from "@/components/lesson/PrereqCallout";
 
 export default function LessonPage() {
   const params = useParams<{ id: string }>();
@@ -150,6 +151,10 @@ function LessonBlockView({ block }: { block: LessonBlock }) {
         <code>{block.text}</code>
       </pre>
     );
+  }
+
+  if (block.type === "prereq") {
+    return <PrereqCallout title={block.title} items={block.items} />;
   }
 
   // callout
