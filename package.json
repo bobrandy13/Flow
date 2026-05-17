@@ -10,7 +10,8 @@
     "build": "pnpm -r --filter './apps/*' build",
     "lint": "pnpm -r --filter './apps/*' --filter './packages/*' lint",
     "typecheck": "pnpm -r --filter './apps/*' --filter './packages/*' typecheck",
-    "test": "pnpm -r --filter './apps/*' --filter './packages/*' test"
+    "test": "pnpm -r --filter './apps/*' --filter './packages/*' test",
+    "test:e2e": "pnpm --filter @flow/web test:e2e"
   },
   "devDependencies": {
     "typescript": "^5"

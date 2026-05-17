@@ -107,10 +107,17 @@ describe("DiagramCanvas source-level invariants", () => {
   it("filters change types before onChange (no dimension churn)", () => {
     expect(src).toMatch(/c\.type\s*===\s*["']position["']/);
     expect(src).toMatch(/c\.type\s*===\s*["']remove["']/);
+    expect(src).not.toMatch(/c\.type\s*===\s*["']add["']/);
+    expect(src).not.toMatch(/c\.type\s*===\s*["']replace["']/);
+  });
+  it("keeps onSelectionChange out of the RF callback dependency loop", () => {
+    expect(src).toMatch(/onSelectionChangeRef/);
+    expect(src).toMatch(/onSelectionChangeRef\.current\?\./);
+    expect(src).not.toMatch(/setSelectionTick/);
   });
   // Regression: in a fully-controlled canvas, re-deriving rfNodes from the
   // diagram drops the `selected` flag, so RF clears selection on the next
-  // render — selection flashes in the inspector and disappears immediately.
+  // render. Selection flashes in the inspector and disappears immediately.
   // We must cache selected ids in a ref and re-attach `selected: true` on
   // every render of rfNodes/rfEdges.
   it("caches selected ids in refs and re-attaches `selected` on rfNodes/rfEdges", () => {
@@ -187,7 +194,7 @@ describe("DiagramCanvas dimensions handling", () => {
 /**
  * Regression: clicking the ✕ button on an edge MUST remove the edge from
  * the diagram. The unit-level click → onDelete contract is tested in
- * `edges/DeletableEdge.test.tsx` (RF can't render edges in jsdom — nodes
+ * `edges/DeletableEdge.test.tsx` (RF can't render edges in jsdom: nodes
  * stay visibility:hidden until measured). Here we test the canvas-level
  * wiring with source-level invariants so the contract can't silently break.
  */
@@ -217,7 +224,7 @@ describe("DiagramCanvas edge deletion wiring", () => {
  * Regression: undo (Cmd/Ctrl+Z) must restore the previous diagram state,
  * and dragging a node must produce ONE undo step (not one per pixel).
  *
- * The undo logic moved to useDiagramEditor hook — tests verify the hook
+ * The undo logic moved to useDiagramEditor hook. Tests verify the hook
  * source AND that the play page correctly wires the hook's outputs.
  */
 describe("play page undo wiring", () => {
@@ -239,7 +246,7 @@ describe("play page undo wiring", () => {
   });
   it("does NOT push history on raw position updates", () => {
     // The DiagramCanvas onChange must be the raw setDiagram, not the
-    // history-wrapped handleDiagramChange — otherwise every drag pixel
+    // history-wrapped handleDiagramChange. Otherwise every drag pixel
     // becomes a separate undo step.
     expect(playSrc).toMatch(/<DiagramCanvas[\s\S]{0,500}onChange=\{setDiagram\}/);
   });

@@ -1,7 +1,7 @@
 import type { Lesson } from "../../types/level";
 
 export const LESSON_12_CIRCUIT_BREAKER: Lesson = {
-  tagline: "When the downstream is broken, fail fast — don't pile on.",
+  tagline: "When the downstream is broken, fail fast: don't pile on.",
   sections: [
     {
       heading: "The cascading-failure problem",
@@ -21,7 +21,7 @@ export const LESSON_12_CIRCUIT_BREAKER: Lesson = {
         },
         {
           type: "p",
-          text: "Think of the circuit breaker in your home fuse box. When a circuit draws too much current, the breaker trips and disconnects it — not to cause a problem, but to prevent the overload from spreading to other circuits. A software circuit breaker does the same thing: when a downstream starts failing, it disconnects the caller from it so the rest of the system stays healthy.",
+          text: "Think of the circuit breaker in your home fuse box. When a circuit draws too much current, the breaker trips and disconnects it: not to cause a problem, but to prevent the overload from spreading to other circuits. A software circuit breaker does the same thing: when a downstream starts failing, it disconnects the caller from it so the rest of the system stays healthy.",
         },
       ],
     },
@@ -30,14 +30,14 @@ export const LESSON_12_CIRCUIT_BREAKER: Lesson = {
       blocks: [
         {
           type: "p",
-          text: "A circuit breaker monitors the recent error rate to a downstream service and transitions between three states: closed (normal — requests flow through), open (tripped — all requests are immediately rejected without attempting the downstream), and half-open (recovery probe — one test request is let through to see if the downstream has recovered). If the probe succeeds the breaker closes; if it fails, back to open.",
+          text: "A circuit breaker monitors the recent error rate to a downstream service and transitions between three states: closed (normal: requests flow through), open (tripped: all requests are immediately rejected without attempting the downstream), and half-open (recovery probe: one test request is let through to see if the downstream has recovered). If the probe succeeds the breaker closes; if it fails, back to open.",
         },
         {
           type: "definitions",
           items: [
             {
               term: "failureRateThreshold",
-              description: "The error ratio above which the breaker opens. Typically 50% or higher — you want confidence the downstream is genuinely broken, not just having a bad moment.",
+              description: "The error ratio above which the breaker opens. Typically 50% or higher: you want confidence the downstream is genuinely broken, not just having a bad moment.",
             },
             {
               term: "windowTicks",
@@ -53,13 +53,13 @@ export const LESSON_12_CIRCUIT_BREAKER: Lesson = {
           type: "callout",
           tone: "success",
           title: "The point isn't fewer drops",
-          text: "When the downstream is truly down, drops are inevitable either way. The circuit breaker's value is freeing your callers fast — they get an error in milliseconds instead of holding a connection for seconds waiting for a timeout. This keeps the rest of your system healthy while the broken part recovers.",
+          text: "When the downstream is truly down, drops are inevitable either way. The circuit breaker's value is freeing your callers fast: they get an error in milliseconds instead of holding a connection for seconds waiting for a timeout. This keeps the rest of your system healthy while the broken part recovers.",
         },
       ],
     },
   ],
   cheatsheet: [
     "Closed → open when error rate spikes. Cooldown. Half-open probe. Success closes it.",
-    "Pair with retries and timeouts — the breaker prevents retries from making things worse.",
+    "Pair with retries and timeouts: the breaker prevents retries from making things worse.",
   ],
 };

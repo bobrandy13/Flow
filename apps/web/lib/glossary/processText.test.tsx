@@ -2,6 +2,11 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
 import { processGlossaryText } from "./processText";
+import { GlossaryPanelProvider } from "./usePanelStore";
+
+function renderWithGlossary(ui: React.ReactNode) {
+  return render(<GlossaryPanelProvider>{ui}</GlossaryPanelProvider>);
+}
 
 describe("processGlossaryText", () => {
   it("returns plain string when no glossary terms are present", () => {
@@ -10,14 +15,14 @@ describe("processGlossaryText", () => {
   });
 
   it("wraps a known term in a GlossaryTerm component", () => {
-    const { container } = render(<>{processGlossaryText("A load balancer distributes traffic.")}</>);
+    const { container } = renderWithGlossary(<>{processGlossaryText("A load balancer distributes traffic.")}</>);
     const term = container.querySelector(".glossary-term");
     expect(term).not.toBeNull();
     expect(term!.textContent).toMatch(/load balancer/i);
   });
 
   it("only highlights the first occurrence of a term", () => {
-    const { container } = render(
+    const { container } = renderWithGlossary(
       <>{processGlossaryText("A queue feeds another queue for buffering.")}</>,
     );
     const terms = container.querySelectorAll(".glossary-term");
@@ -25,7 +30,7 @@ describe("processGlossaryText", () => {
   });
 
   it("handles multiple different terms in one text", () => {
-    const { container } = render(
+    const { container } = renderWithGlossary(
       <>{processGlossaryText("Use sharding and replication for scale.")}</>,
     );
     const terms = container.querySelectorAll(".glossary-term");
@@ -33,7 +38,7 @@ describe("processGlossaryText", () => {
   });
 
   it("preserves surrounding text", () => {
-    const { container } = render(
+    const { container } = renderWithGlossary(
       <>{processGlossaryText("Before latency after")}</>,
     );
     expect(container.textContent).toBe("Before latency after");

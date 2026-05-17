@@ -133,7 +133,7 @@ function EntryRow({ termKey, entry, isExpanded, isActive, onToggle, rowRef }: En
   );
 }
 
-// ─── GlossaryPanel ───────────────────────────────────────────────────────────
+// GlossaryPanel
 
 export function GlossaryPanel() {
   const { isOpen, activeTerm, close } = useGlossaryPanel();
@@ -156,15 +156,14 @@ export function GlossaryPanel() {
     });
   }, []);
 
-  // When activeTerm changes: expand it and scroll into view
+  // When activeTerm changes: expand it and scroll into view.
   useEffect(() => {
     if (!activeTerm || !isOpen) return;
-    setExpandedKeys((prev) => {
-      if (prev.has(activeTerm)) return prev;
-      return new Set([...prev, activeTerm]);
-    });
-    // Scroll after a tick so the DOM has updated
     const id = setTimeout(() => {
+      setExpandedKeys((prev) => {
+        if (prev.has(activeTerm)) return prev;
+        return new Set([...prev, activeTerm]);
+      });
       const el = rowRefs.current[activeTerm];
       el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }, 60);
@@ -342,4 +341,3 @@ export function GlossaryPanel() {
     </>
   );
 }
-

@@ -142,12 +142,49 @@ const diagnosisSchema = z.object({
   suggestions: z.array(z.string()),
 });
 
-const simulationOutcomeSchema = z.object({
-  passed: z.boolean(),
-  metrics: simulationMetricsSchema,
-  failureReason: z.string().optional(),
-  diagnosis: diagnosisSchema,
-});
+function legacyDiagnosisFallback(outcome: {
+  passed: boolean;
+  metrics: z.infer<typeof simulationMetricsSchema>;
+  failureReason?: string;
+}) {
+  if (outcome.passed) {
+    return {
+      category: "passed_clean" as const,
+      headline: "Simulation completed",
+      explanation:
+        "The simulation completed successfully, but the response did not include detailed mentor feedback.",
+      culpritNodeIds: [],
+      evidence: [],
+      suggestions: [],
+    };
+  }
+
+  return {
+    category: "node_overloaded" as const,
+    headline: outcome.failureReason ?? "Simulation did not meet the SLA",
+    explanation:
+      "The simulation completed, but the response did not include detailed mentor feedback. Review the metrics and look for the node with the most drops or highest load.",
+    culpritNodeIds: outcome.metrics.bottleneckNodeId ? [outcome.metrics.bottleneckNodeId] : [],
+    evidence: [
+      { label: "Drops", value: String(outcome.metrics.drops) },
+      { label: "Success rate", value: `${Math.round(outcome.metrics.successRate * 100)}%` },
+      { label: "p95 latency", value: String(outcome.metrics.p95Latency) },
+    ],
+    suggestions: ["Check the busiest node, then add capacity or insert the matching pattern."],
+  };
+}
+
+const simulationOutcomeSchema = z
+  .object({
+    passed: z.boolean(),
+    metrics: simulationMetricsSchema,
+    failureReason: z.string().optional(),
+    diagnosis: diagnosisSchema.optional(),
+  })
+  .transform((outcome) => ({
+    ...outcome,
+    diagnosis: outcome.diagnosis ?? legacyDiagnosisFallback(outcome),
+  }));
 
 const nodeRuntimeSnapshotSchema = z.object({
   inFlight: z.number(),

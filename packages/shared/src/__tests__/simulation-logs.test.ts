@@ -68,7 +68,7 @@ describe("buildSimulationLogs", () => {
     expect(text).toContain("74.8%");
     expect(text).toContain("Drops        : 545");
     expect(text).toContain("Drops by node");
-    expect(text).toContain("server"); // bottleneck node kind
+    expect(text).toContain("Server"); // bottleneck node kind
   });
 
   it("explicitly notes 'no drops, peak inFlight = cap is fine' when 0 drops", () => {
@@ -95,6 +95,43 @@ describe("buildSimulationLogs", () => {
     });
     expect(text).toContain("no drops");
     expect(text).toMatch(/peak inFlight = capacity is fine/);
+  });
+
+  it("formats long ids without merging columns and explains queue consumers", () => {
+    const diagram: Diagram = {
+      nodes: [
+        { id: "queue-with-a-long-id", kind: "queue", position: { x: 0, y: 0 } },
+        { id: "db-replica-x1keqm", kind: "database", position: { x: 0, y: 0 } },
+      ],
+      edges: [{ id: "e1", fromNodeId: "queue-with-a-long-id", toNodeId: "db-replica-x1keqm" }],
+    };
+    const happy: SimulationOutcome = {
+      passed: true,
+      metrics: { avgLatency: 5.99, p95Latency: 7, successRate: 1, drops: 0, bottleneckNodeId: "db-replica-x1keqm" },
+      diagnosis: {
+        category: "passed_clean",
+        headline: "Clean pass",
+        explanation: "",
+        culpritNodeIds: [],
+        evidence: [],
+        suggestions: [],
+      },
+    };
+
+    const text = buildSimulationLogs({
+      diagram,
+      outcome: happy,
+      finalPerNode: {
+        "queue-with-a-long-id": snap({ peakPendingDepth: 368 }),
+        "db-replica-x1keqm": snap({ servedTotal: 2160, peakInFlight: 120 }),
+      },
+    });
+
+    expect(text).toContain("Avg latency  : 59.9 ms (5.99 ticks)");
+    expect(text).toMatch(/db-replica-x1keqm\s+Database/);
+    expect(text).toContain("Queue notes");
+    expect(text).toContain("consumer path is Database (db-replica-x1keqm)");
+    expect(text).toContain("reached full capacity while draining the queue, but dropped nothing");
   });
 
   it("includes the diagram export at the end (no positions)", () => {

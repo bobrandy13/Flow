@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -96,12 +96,16 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
    * and update the cache when dimension changes flow through.
    */
   const measuredRef = useRef(new Map<string, { width: number; height: number }>());
-  // Selection is also kept in a ref because the canvas is fully controlled —
+  // Selection is also kept in a ref because the canvas is fully controlled.
   // re-deriving rfNodes from `diagram` would otherwise drop the `selected`
   // flag and clear the selection on every position/dimension change, making
   // the inspector flash and disappear immediately after a click.
   const selectedNodesRef = useRef(new Set<string>());
   const selectedEdgesRef = useRef(new Set<string>());
+  const onSelectionChangeRef = useRef(onSelectionChange);
+  useEffect(() => {
+    onSelectionChangeRef.current = onSelectionChange;
+  }, [onSelectionChange]);
 
   const kindOf = useCallback(
     (id: string) => diagram.nodes.find((n) => n.id === id)?.kind,
@@ -171,7 +175,7 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
     });
   }
   // Synthetic "tether" edges: dashed lines between members of the same
-  // replica group. Visual-only — they don't exist in the diagram model and
+  // replica group. Visual-only: they don't exist in the diagram model and
   // are non-interactive (can't be selected, dragged, or deleted). They make
   // it obvious which databases are linked even when the player drags them
   // far apart on the canvas.
@@ -237,10 +241,10 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
 
       // Only round-trip through our diagram model for changes that carry
       // semantic state (position, removal). Pure RF-internal churn
-      // (dimensions, select) must NOT trigger a setDiagram or we re-derive
-      // rfNodes from scratch and clobber what RF just measured.
+      // (dimensions, select, add, replace) must NOT trigger a setDiagram or we
+      // can get stuck in React Flow -> setDiagram -> React Flow loops.
       const meaningful = changes.filter(
-        (c) => c.type === "position" || c.type === "remove" || c.type === "replace" || c.type === "add",
+        (c) => c.type === "position" || c.type === "remove",
       );
       if (meaningful.length === 0) return;
 
@@ -270,11 +274,31 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
           kind: (n.data as ComponentNodeData)?.kind ?? existing?.kind ?? "server",
           position: { x: n.position.x, y: n.position.y },
           config: existing?.config,
+          replicaGroupId: existing?.replicaGroupId,
+          role: existing?.role,
+          region: existing?.region,
         };
       });
       const nextEdges = removedIds.size
         ? diagram.edges.filter((e) => !removedIds.has(e.fromNodeId) && !removedIds.has(e.toNodeId))
         : diagram.edges;
+      const nodesUnchanged =
+        nextNodes.length === diagram.nodes.length &&
+        nextNodes.every((node, index) => {
+          const current = diagram.nodes[index];
+          return (
+            current &&
+            node.id === current.id &&
+            node.kind === current.kind &&
+            node.position.x === current.position.x &&
+            node.position.y === current.position.y &&
+            node.config === current.config &&
+            node.replicaGroupId === current.replicaGroupId &&
+            node.role === current.role &&
+            node.region === current.region
+          );
+        });
+      if (nodesUnchanged && nextEdges === diagram.edges) return;
       onChange({ nodes: nextNodes, edges: nextEdges });
     },
     [diagram.edges, diagram.nodes, onChange, onHistorySnapshot],
@@ -282,10 +306,8 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
 
   const handleEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
-      // Filter out pure RF-internal churn (select) — same pattern as handleNodesChange.
-      const meaningful = changes.filter(
-        (c) => c.type === "remove" || c.type === "add" || c.type === "replace",
-      );
+      // Filter out pure RF-internal churn (select), same pattern as handleNodesChange.
+      const meaningful = changes.filter((c) => c.type === "remove");
       if (meaningful.length === 0) return;
       onHistorySnapshot?.();
       const input: Edge[] = diagram.edges.map((e) => ({
@@ -296,6 +318,7 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
       const updated = applyEdgeChanges(meaningful, input);
       const survivingIds = new Set(updated.map((e) => e.id));
       const nextEdges = diagram.edges.filter((e) => survivingIds.has(e.id));
+      if (nextEdges.length === diagram.edges.length) return;
       onChange({ nodes: diagram.nodes, edges: nextEdges });
     },
     [diagram.edges, diagram.nodes, onChange, onHistorySnapshot],
@@ -335,9 +358,6 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
     [onDropComponent, screenToFlowPosition],
   );
 
-  // Bumped on every selection change to force a re-render that re-attaches
-  // `selected: true` from selectedNodesRef/selectedEdgesRef onto rfNodes/rfEdges.
-  const [, setSelectionTick] = useState(0);
   const handleSelectionChange = useCallback(
     (sel: { nodes: { id: string }[]; edges: { id: string }[] }) => {
       const nextNodes = new Set(sel.nodes.map((n) => n.id));
@@ -351,13 +371,12 @@ function DiagramCanvasInner({ diagram, onChange, onSelectionChange, onDropCompon
       if (sameNodes && sameEdges) return;
       selectedNodesRef.current = nextNodes;
       selectedEdgesRef.current = nextEdges;
-      setSelectionTick((t) => t + 1);
-      onSelectionChange?.({
+      onSelectionChangeRef.current?.({
         nodeId: sel.nodes[0]?.id,
         edgeId: sel.edges[0]?.id,
       });
     },
-    [onSelectionChange],
+    [],
   );
 
   return (

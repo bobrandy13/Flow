@@ -54,6 +54,9 @@ export function SimulationResults({ report, nodeLabels, liveFrame, totalTicks }:
               </li>
             ))}
           </ul>
+          {!report.structuralPassed && !report.simulation && (
+            <StructuralVerdict ruleResults={report.ruleResults} simPassed={false} />
+          )}
         </>
       )}
 
@@ -215,7 +218,7 @@ const panelStyle: React.CSSProperties = {
 /**
  * Verdict shown when the diagram fails structural rules. Even if the
  * simulator happens to meet SLA (e.g. a 2-node toy that ignores the
- * "needs a database" rule), the level is *not* complete — surface the
+ * "needs a database" rule), the level is *not* complete. Surface the
  * missing-pieces explanation here instead of the SLA mentor verdict.
  */
 function StructuralVerdict({
@@ -240,12 +243,12 @@ function StructuralVerdict({
       }}
     >
       <div style={{ fontFamily: fontFamily.display, fontSize: 13, fontWeight: 700, color: tone.bar, marginBottom: 6 }}>
-        Your design is missing required pieces
+        Add the required building blocks
       </div>
       <div style={{ fontSize: 12, lineHeight: 1.5, opacity: 0.9, marginBottom: 8 }}>
         {simPassed
-          ? "The simulation happened to meet the SLA, but the level brief requires components or connections that aren't in your diagram yet. Fix these and re-run."
-          : "Before tuning the simulation, the level brief requires components or connections that aren't in your diagram yet."}
+          ? "The simulation happened to meet the SLA, but the level is teaching a specific pattern. Add these pieces and re-run."
+          : "These checks explain the pattern this level wants you to practice. Fix them first, then tune the simulation."}
       </div>
       <div style={{ fontSize: 10, letterSpacing: 1, textTransform: "uppercase", opacity: 0.55, marginBottom: 3 }}>
         Missing
@@ -262,7 +265,7 @@ function StructuralVerdict({
 /**
  * Mentor verdict panel: turns the structured Diagnosis from the engine into
  * a readable explanation with evidence and next-step suggestions. Coloured
- * tone reflects the category — red on fail, amber on a thin-margin pass,
+ * tone reflects the category: red on fail, amber on a thin-margin pass,
  * soft blue on a clean pass.
  */
 function MentorVerdict({

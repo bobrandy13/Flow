@@ -74,7 +74,7 @@ export const KIND_EXPLAINERS: Record<ComponentKind, KindExplainer> = {
   server: {
     one_liner: "Processes requests.",
     what_it_does:
-      "A server takes in a request, does work for a few milliseconds, then hands it off (to a database, cache, or back to the client). It can only handle so many requests at the same time — its capacity.",
+      "A server takes in a request, does work for a few milliseconds, then hands it off (to a database, cache, or back to the client). It can only handle so many requests at the same time. That limit is its capacity.",
     analogy: "Think: a barista. Fast, but only one drink per hand at a time.",
   },
   database: {
@@ -86,7 +86,7 @@ export const KIND_EXPLAINERS: Record<ComponentKind, KindExplainer> = {
   cache: {
     one_liner: "Remembers recent results.",
     what_it_does:
-      "A cache sits in front of slower storage and answers repeated requests instantly. Each cache edge has a hit rate — the fraction of requests served from memory without going to the database.",
+      "A cache sits in front of slower storage and answers repeated requests instantly. Each cache edge has a hit rate: the fraction of requests served from memory without going to the database.",
     analogy: "Think: keeping the most-used files on your desk instead of in the cabinet.",
   },
   load_balancer: {
@@ -98,13 +98,13 @@ export const KIND_EXPLAINERS: Record<ComponentKind, KindExplainer> = {
   queue: {
     one_liner: "Decouples producers from consumers.",
     what_it_does:
-      "A queue accepts messages from a producer and acknowledges them instantly — the producer doesn't wait for the consumer to do the work. The consumer pulls messages from the queue at its own pace. This lets a fast producer absorb bursts without overwhelming a slower consumer; the trade-off is eventual consistency (the producer doesn't know if the work succeeded).",
+      "A queue accepts jobs from a producer and acknowledges them quickly. The producer does not wait for the consumer to finish the work. The consumer is the node after the queue: it pulls jobs at its own pace. In the burst level, the queued job is the database write, so the queue feeds the database steadily instead of letting every server hit it at once.",
     analogy: "Think: a kitchen ticket rail. Waiters drop orders on the rail and walk away; cooks pull tickets when they're free.",
   },
   shard: {
     one_liner: "Routes by key so each piece of data lives on one downstream.",
     what_it_does:
-      "A shard router splits traffic deterministically: the same request id always lands on the same downstream. This lets you scale past a single database's limits — each shard owns a slice of the keyspace and runs at its own capacity. Trade-off: queries that span shards need a separate aggregation step.",
+      "A shard router splits traffic deterministically: the same request id always lands on the same downstream. This lets you scale past a single database's limits. Each shard owns a slice of the keyspace and runs at its own capacity. Trade-off: queries that span shards need a separate aggregation step.",
     analogy: "Think: assigning library books by author surname. A–F to one shelf, G–M to another. Anyone searching always knows which shelf to check.",
   },
   rate_limiter: {
@@ -117,7 +117,7 @@ export const KIND_EXPLAINERS: Record<ComponentKind, KindExplainer> = {
     one_liner: "Fails fast when a downstream is broken.",
     what_it_does:
       "A circuit breaker watches the recent error rate to its downstream. If the rate climbs above a threshold, the breaker 'opens' and rejects new requests immediately instead of waiting for them to time out. After a cooldown it half-opens, sends a probe, and either closes (recovered) or stays open (still broken).",
-    analogy: "Think: an electrical breaker that trips when the line is overloaded — better to disconnect than to burn the house down.",
+    analogy: "Think: an electrical breaker that trips when the line is overloaded. Better to disconnect than to burn the house down.",
   },
   cdn: {
     one_liner: "An edge cache that sits between clients and your origin.",
@@ -134,9 +134,9 @@ export const METRIC_EXPLAINERS: Record<string, string> = {
   avgLatency:
     "Average end-to-end time a successful request spent in the system, from the moment a client sent it to the moment a response came back.",
   p95Latency:
-    "95th percentile latency: 95% of successful requests were faster than this. A small number of slow requests don't hide here — this is the experience of the worst-served users.",
+    "95th percentile latency: 95% of successful requests were faster than this. A small number of slow requests don't hide here. This is the experience of the worst-served users.",
   drops:
     "Total number of requests that failed: dropped due to capacity overflow, lost in a loop, or never delivered before time ran out.",
   bottleneck:
-    "The component that was closest to (or over) its capacity. This is usually where to focus your next change — adding a cache in front of it, scaling it out, or rerouting traffic.",
+    "The component that was closest to (or over) its capacity. This is usually where to focus your next change: adding a cache in front of it, scaling it out, or rerouting traffic.",
 };

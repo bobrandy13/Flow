@@ -1,4 +1,4 @@
-// Re-exports — individual lesson files are now the source of truth.
+// Re-exports: individual lesson files are now the source of truth.
 export { LESSON_01_HELLO_SERVER } from "./lessons/01-hello-server";
 export { LESSON_02_PERSISTENCE } from "./lessons/02-persistence";
 export { LESSON_03_SCALE_OUT } from "./lessons/03-scale-out";

@@ -15,10 +15,12 @@ interface NodeInspectorProps {
   selectedNodeId?: string;
   /** Optional live runtime snapshot for the selected node, while a sim is running. */
   runtime?: NodeRuntimeSnapshot;
+  /** Optional per-kind cap from the level definition. */
+  maxOf?: Partial<Record<DiagramNode["kind"], number>>;
   onChange: (next: Diagram) => void;
 }
 
-export function NodeInspector({ diagram, selectedNodeId, runtime, onChange }: NodeInspectorProps) {
+export function NodeInspector({ diagram, selectedNodeId, runtime, maxOf, onChange }: NodeInspectorProps) {
   const node = diagram.nodes.find((n) => n.id === selectedNodeId);
   if (!node) {
     return <Placeholder text="Select a node to inspect it." />;
@@ -50,7 +52,7 @@ export function NodeInspector({ diagram, selectedNodeId, runtime, onChange }: No
         />
       )}
       {node.kind === "database" && (
-        <ReplicaControls node={node} diagram={diagram} onChange={onChange} />
+        <ReplicaControls node={node} diagram={diagram} maxOf={maxOf} onChange={onChange} />
       )}
       <RegionSelector
         value={node.region}
@@ -88,7 +90,7 @@ function RegionSelector({
         }}
         style={selectStyle}
       >
-        <option value="">— None —</option>
+        <option value="">- None -</option>
         {REGIONS.map((r) => (
           <option key={r} value={r}>
             {REGION_LABELS[r]}
@@ -105,17 +107,26 @@ function RegionSelector({
 function ReplicaControls({
   node,
   diagram,
+  maxOf,
   onChange,
 }: {
   node: DiagramNode;
   diagram: Diagram;
+  maxOf?: Partial<Record<DiagramNode["kind"], number>>;
   onChange: (next: Diagram) => void;
 }) {
   const groupId = node.replicaGroupId;
   const groupMembers = groupId
     ? diagram.nodes.filter((n) => n.replicaGroupId === groupId)
     : [];
+  const databaseCount = diagram.nodes.filter((n) => n.kind === "database").length;
+  const databaseLimit = maxOf?.database;
+  const canAddReplica = databaseLimit === undefined || databaseCount < databaseLimit;
+  const limitMessage = databaseLimit === undefined
+    ? null
+    : `This level allows ${databaseLimit} database ${databaseLimit === 1 ? "node" : "nodes"}. Replication unlocks in later levels.`;
   const handleReplicate = () => {
+    if (!canAddReplica) return;
     const newGroupId = groupId ?? `rg-${Math.random().toString(36).slice(2, 8)}`;
     const replicaId = `db-replica-${Math.random().toString(36).slice(2, 8)}`;
     const newReplica: DiagramNode = {
@@ -156,10 +167,19 @@ function ReplicaControls({
             <strong>{node.role ?? "replica"}</strong>.
             <span style={{ opacity: 0.65 }}> Reads spread across all healthy members; writes go to the primary.</span>
           </div>
-          <button onClick={handleReplicate} style={replicateButtonStyle} aria-label="Add replica">
+          {limitMessage && !canAddReplica && (
+            <div style={replicaLimitStyle}>{limitMessage}</div>
+          )}
+          <button
+            onClick={handleReplicate}
+            style={canAddReplica ? replicateButtonStyle : disabledReplicateButtonStyle}
+            aria-label={canAddReplica ? "Add replica" : "Database replica limit reached"}
+            disabled={!canAddReplica}
+            title={limitMessage ?? undefined}
+          >
             ➕ Add replica
           </button>
-          <button onClick={handleUngroup} style={{ ...replicateButtonStyle, background: "transparent", color: color.text, borderColor: color.borderStrong, marginTop: 6 }} aria-label="Ungroup replica">
+          <button onClick={handleUngroup} style={{ ...replicateButtonStyle, background: "transparent", color: color.text, border: `1px solid ${color.borderStrong}`, marginTop: 6 }} aria-label="Ungroup replica">
             ✂️ Ungroup
           </button>
         </>
@@ -168,7 +188,16 @@ function ReplicaControls({
           <div style={{ fontSize: 12, lineHeight: 1.45, marginBottom: 8, opacity: 0.85 }}>
             Standalone database. Replicate to spread reads and tolerate failures.
           </div>
-          <button onClick={handleReplicate} style={replicateButtonStyle} aria-label="Replicate database">
+          {limitMessage && !canAddReplica && (
+            <div style={replicaLimitStyle}>{limitMessage}</div>
+          )}
+          <button
+            onClick={handleReplicate}
+            style={canAddReplica ? replicateButtonStyle : disabledReplicateButtonStyle}
+            aria-label={canAddReplica ? "Replicate database" : "Database replica limit reached"}
+            disabled={!canAddReplica}
+            title={limitMessage ?? undefined}
+          >
             🔗 Replicate
           </button>
         </>
@@ -188,8 +217,8 @@ function LiveStatsPanel({ kind, runtime }: { kind: DiagramNode["kind"]; runtime:
   const peakPct = Math.min(1, runtime.peakInFlight / cap);
   const barColor = pct < 0.6 ? color.success : pct < 0.85 ? color.warning : color.danger;
   const verdict =
-    pct >= 0.95 ? "🔴 Overloaded — drops likely" :
-    pct >= 0.7 ? "🟠 Hot — close to its limit" :
+    pct >= 0.95 ? "🔴 Overloaded: drops likely" :
+    pct >= 0.7 ? "🟠 Hot: close to its limit" :
     pct > 0 ? "🟢 Healthy" :
     "💤 Idle";
 
@@ -331,6 +360,20 @@ const replicateButtonStyle: React.CSSProperties = {
   letterSpacing: 1.5,
   textTransform: "uppercase",
   cursor: "pointer",
+};
+const disabledReplicateButtonStyle: React.CSSProperties = {
+  ...replicateButtonStyle,
+  background: "rgba(122, 223, 255, 0.08)",
+  color: color.textMuted,
+  border: `1px solid ${color.borderStrong}`,
+  cursor: "not-allowed",
+  opacity: 0.6,
+};
+const replicaLimitStyle: React.CSSProperties = {
+  fontSize: 11,
+  lineHeight: 1.45,
+  color: color.textMuted,
+  marginBottom: 8,
 };
 
 function Placeholder({ text }: { text: string }) {

@@ -27,6 +27,9 @@ describe("validator", () => {
   it("requires_kind fails below minimum", () => {
     const [r] = evaluateRules(diagram, [{ type: "requires_kind", kind: "cache", min: 1 }]);
     expect(r.passed).toBe(false);
+    expect(r.message).toBe(
+      "Add a Cache node (none are on the canvas yet). For this lesson, the cache should sit on the read path: Server -> Cache -> Database.",
+    );
   });
 
   it("forbidden passes when kind is absent", () => {
@@ -48,5 +51,19 @@ describe("validator", () => {
   it("requires_path fails when no edges connect the kinds", () => {
     expect(pathExists(diagram, "client", "cache")).toBe(false);
     expect(pathExists(diagram, "database", "client")).toBe(false); // directed
+  });
+
+  it("explains the intended cache wiring when the server is not connected to cache", () => {
+    const [r] = evaluateRules(diagram, [{ type: "requires_path", from: "server", to: "cache" }]);
+    expect(r.passed).toBe(false);
+    expect(r.message).toBe(
+      "Add the missing Cache node first, then wire Server -> Cache. Connect Server -> Cache so repeated reads can return quickly instead of making every request wait on the database. For misses, continue with Cache -> Database.",
+    );
+  });
+
+  it("uses component labels instead of raw component ids in path messages", () => {
+    const [r] = evaluateRules(diagram, [{ type: "requires_path", from: "client", to: "load_balancer" }]);
+    expect(r.passed).toBe(true);
+    expect(r.message).toBe("Path exists: Client -> Load Balancer.");
   });
 });

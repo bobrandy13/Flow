@@ -24,11 +24,11 @@ function failDiagnosis(): Diagnosis {
 function passCleanDiagnosis(): Diagnosis {
   return {
     category: "passed_clean",
-    headline: "Clean pass — your system has room to breathe",
+    headline: "Clean pass: your system has room to breathe",
     explanation: "Healthy design. Move on.",
     culpritNodeIds: [],
     evidence: [{ label: "Success rate", value: "100%" }],
-    suggestions: ["Try removing one component — does the system still pass?"],
+    suggestions: ["Try removing one component. Does the system still pass?"],
   };
 }
 
@@ -62,7 +62,7 @@ describe("SimulationResults → MentorVerdict", () => {
     expect(screen.getByText("120 / 120")).toBeInTheDocument();
     expect(screen.getByText(/scale out/i)).toBeInTheDocument();
     // Culprit label resolves from the nodeLabels map.
-    expect(screen.getByText(/database #1/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/database #1/i).length).toBeGreaterThan(0);
   });
 
   it("renders a celebratory verdict on a clean pass", () => {
@@ -76,5 +76,25 @@ describe("SimulationResults → MentorVerdict", () => {
     const report: ValidationReport = { structuralPassed: false, ruleResults: [] };
     render(<SimulationResults report={report} />);
     expect(screen.queryByTestId("mentor-verdict")).not.toBeInTheDocument();
+  });
+
+  it("renders helpful structural guidance before simulation tuning", () => {
+    const report: ValidationReport = {
+      structuralPassed: false,
+      ruleResults: [
+        {
+          passed: false,
+          rule: { type: "requires_kind", kind: "cache", min: 1 },
+          message:
+            "Add a Cache node (none are on the canvas yet). For this lesson, the cache should sit on the read path: Server -> Cache -> Database.",
+        },
+      ],
+    };
+
+    render(<SimulationResults report={report} />);
+
+    expect(screen.getByText(/add the required building blocks/i)).toBeInTheDocument();
+    expect(screen.getByText(/pattern this level wants you to practice/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/server -> cache -> database/i).length).toBeGreaterThan(0);
   });
 });

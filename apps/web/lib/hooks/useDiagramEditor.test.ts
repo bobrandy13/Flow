@@ -171,6 +171,8 @@ describe("useDiagramEditor", () => {
       result.current.addNode("load_balancer");
     });
     expect(result.current.diagram.nodes[0].config).toBeDefined();
-    expect(result.current.diagram.nodes[0].config?.fanOut).toBeDefined();
+    expect(result.current.diagram.nodes[0].config).toMatchObject({
+      fanOut: expect.any(String),
+    });
   });
 });

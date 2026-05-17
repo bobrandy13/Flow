@@ -6,7 +6,7 @@
  * frames + outcome + diagram and either returns a `Diagnosis` (winning) or
  * `null`. First match wins, so more specific probes go first.
  *
- * The probes are deliberately conservative — they only fire when they can
+ * The probes are deliberately conservative: they only fire when they can
  * back the diagnosis with concrete evidence. The terminal fallback ensures
  * every run gets a verdict.
  */
@@ -52,7 +52,7 @@ export function diagnose(args: DiagnoseArgs): Diagnosis {
     const d = probe(ctx);
     if (d) return d;
   }
-  // Terminal fallback — should be unreachable because the last entry in each
+  // Terminal fallback: should be unreachable because the last entry in each
   // list is itself a guaranteed-hit fallback, but typed safely just in case.
   return makeFallback(ctx);
 }
@@ -84,8 +84,32 @@ function hasKind(ctx: ProbeCtx, kind: ComponentKind): boolean {
   return nodesOfKind(ctx, kind).length > 0;
 }
 
+function hasEdgeFromKindToKind(ctx: ProbeCtx, fromKind: ComponentKind, toKind: ComponentKind): boolean {
+  return ctx.diagram.edges.some((edge) => {
+    const from = ctx.nodesById.get(edge.fromNodeId);
+    const to = ctx.nodesById.get(edge.toNodeId);
+    return from?.kind === fromKind && to?.kind === toKind;
+  });
+}
+
+function hasEdgeFromKindToAnyKind(
+  ctx: ProbeCtx,
+  fromKind: ComponentKind,
+  toKinds: ReadonlyArray<ComponentKind>,
+): boolean {
+  return ctx.diagram.edges.some((edge) => {
+    const from = ctx.nodesById.get(edge.fromNodeId);
+    const to = ctx.nodesById.get(edge.toNodeId);
+    return from?.kind === fromKind && !!to && toKinds.includes(to.kind);
+  });
+}
+
+function isDisconnected(ctx: ProbeCtx, nodeId: string): boolean {
+  return !ctx.diagram.edges.some((edge) => edge.fromNodeId === nodeId || edge.toNodeId === nodeId);
+}
+
 /** Snapshot for a node id, or a zeroed default when the run produced no
- *  frames (degenerate case — should still let probes be safe). */
+ *  frames (degenerate case, but probes should still be safe). */
 function snap(ctx: ProbeCtx, nodeId: string): NodeRuntimeSnapshot {
   return (
     ctx.finalPerNode[nodeId] ?? {
@@ -248,7 +272,7 @@ const probeQueueOverflow: Probe = (ctx) => {
   return null;
 };
 
-/** A rate limiter was the heaviest dropper — design working as intended,
+/** A rate limiter was the heaviest dropper. Design working as intended,
  *  player needs to understand the tradeoff. */
 const probeRateLimiterPressure: Probe = (ctx) => {
   const top = topDropNode(ctx);
@@ -271,6 +295,78 @@ const probeRateLimiterPressure: Probe = (ctx) => {
       ...buildEvidenceForMetrics(ctx.outcome.metrics, ctx.sla),
     ],
   );
+};
+
+/** A cache/CDN exists, but it is not wired into the path that is overloading. */
+const probeCacheBypassed: Probe = (ctx) => {
+  const top = topDropNode(ctx);
+  const bottleneckId = top?.node.id ?? ctx.outcome.metrics.bottleneckNodeId;
+  if (!bottleneckId) return null;
+  const bottleneck = ctx.nodesById.get(bottleneckId);
+  if (!bottleneck || bottleneck.kind === "cache" || bottleneck.kind === "cdn") return null;
+  if (bottleneck.kind !== "server" && bottleneck.kind !== "database") return null;
+
+  const cacheKinds: ComponentKind[] = ["cache", "cdn"];
+  for (const cacheKind of cacheKinds) {
+    const caches = nodesOfKind(ctx, cacheKind);
+    if (caches.length === 0) continue;
+
+    const served = caches.reduce((sum, node) => sum + snap(ctx, node.id).servedTotal, 0);
+    const disconnected = caches.every((node) => isDisconnected(ctx, node.id));
+
+    const hasExpectedEntry =
+      cacheKind === "cdn"
+        ? hasEdgeFromKindToKind(ctx, "client", "cdn")
+        : hasEdgeFromKindToKind(ctx, "server", "cache");
+    const hasExpectedExit =
+      cacheKind === "cdn"
+        ? hasEdgeFromKindToAnyKind(ctx, "cdn", ["load_balancer", "server", "cache"])
+        : hasEdgeFromKindToAnyKind(ctx, "cache", ["database", "shard"]);
+    const hasDirectBypass =
+      cacheKind === "cdn"
+        ? hasEdgeFromKindToKind(ctx, "client", "server") ||
+          hasEdgeFromKindToKind(ctx, "client", "load_balancer")
+        : hasEdgeFromKindToKind(ctx, "server", "database") ||
+          hasEdgeFromKindToKind(ctx, "server", "shard");
+
+    const isBypassed = served === 0 || disconnected || !hasExpectedEntry || !hasExpectedExit || hasDirectBypass;
+    if (!isBypassed) continue;
+
+    const label = labelFor(cacheKind);
+    const expectedPath =
+      cacheKind === "cdn" ? "Client -> CDN -> Server" : "Server -> Cache -> Database";
+    const bypassPath =
+      cacheKind === "cdn" ? "Client -> Server" : "Server -> Database";
+    const bottleneckLabel = labelFor(bottleneck.kind);
+
+    return {
+      category: "cache_underused",
+      headline: `Your ${label.toLowerCase()} is on the canvas, but traffic is not using it`,
+      explanation:
+        `The ${bottleneckLabel.toLowerCase()} could not keep up because requests are still taking the expensive path (${bypassPath}). ` +
+        `Your ${label.toLowerCase()} served ${served} requests, so it is not shortening those trips. Put it on the hot path (${expectedPath}) so repeated reads can turn around before slow backend work piles up.`,
+      culpritNodeIds: [bottleneck.id, ...caches.map((node) => node.id)],
+      evidence: [
+        { label: `${label} traffic`, value: `${served} served` },
+        ...(top ? [{ label: `Drops at ${bottleneckLabel}`, value: `${top.drops}` }] : []),
+        ...buildEvidenceForMetrics(ctx.outcome.metrics, ctx.sla),
+      ],
+      suggestions:
+        cacheKind === "cdn"
+          ? [
+              "Connect the client to the CDN first, then connect the CDN to your origin server or load balancer.",
+              "Remove the direct client-to-origin path when the traffic should be cacheable.",
+              "Use a high hit rate for cacheable read traffic so most requests never reach the origin.",
+            ]
+          : [
+              "Connect the server to the cache, then connect the cache to the database.",
+              "Remove the direct server-to-database read path when the cache should handle repeated reads.",
+              "Set the cache edge hit rate high enough for this read-heavy workload.",
+            ],
+    };
+  }
+
+  return null;
 };
 
 /** A non-client node ran out of capacity and dominated drops. */
@@ -409,6 +505,7 @@ const PROBES_FAIL: Probe[] = [
   probeBreakerAbsent,
   probeQueueOverflow,
   probeRateLimiterPressure,
+  probeCacheBypassed,
   probeNodeOverloaded,
   probeLatencyPathTooLong,
   probeCacheUnderused,

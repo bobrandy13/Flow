@@ -24,7 +24,7 @@ export const LESSON_04_CACHE: Lesson = {
           items: [
             {
               term: "Cache hit",
-              description: "The answer is already in the cache. Return it immediately — very cheap, very fast.",
+              description: "The answer is already in the cache. Return it immediately: very cheap, very fast.",
             },
             {
               term: "Cache miss",
@@ -49,13 +49,13 @@ export const LESSON_04_CACHE: Lesson = {
           type: "callout",
           tone: "info",
           title: "Cache-aside (most common)",
-          text: "The server checks the cache first. On a miss, it queries the database directly and writes the result back into the cache. The application code owns the caching logic — it decides what to cache and when.",
+          text: "The server checks the cache first. On a miss, it queries the database directly and writes the result back into the cache. The application code owns the caching logic: it decides what to cache and when.",
         },
         {
           type: "callout",
           tone: "info",
           title: "Read-through",
-          text: "The server always asks the cache, and the cache itself is responsible for fetching from the database on a miss. The server doesn't even know the database exists — the cache abstracts it away entirely.",
+          text: "The server always asks the cache, and the cache itself is responsible for fetching from the database on a miss. The server doesn't even know the database exists: the cache abstracts it away entirely.",
         },
       ],
     },
@@ -70,7 +70,7 @@ export const LESSON_04_CACHE: Lesson = {
           type: "callout",
           tone: "info",
           title: "Write-through",
-          text: "Write to the cache and the database at the same time. Both must succeed before acknowledging the client. Guarantees strong consistency — the cache is never stale — at the cost of slightly slower writes.",
+          text: "Write to the cache and the database at the same time. Both must succeed before acknowledging the client. Guarantees strong consistency (the cache is never stale) at the cost of slightly slower writes.",
         },
         {
           type: "callout",
@@ -82,7 +82,7 @@ export const LESSON_04_CACHE: Lesson = {
           type: "callout",
           tone: "info",
           title: "Write-around",
-          text: "Skip the cache entirely on writes — write only to the database. The cache fills naturally on the next read miss. Avoids polluting the cache with data that might never be read again.",
+          text: "Skip the cache entirely on writes: write only to the database. The cache fills naturally on the next read miss. Avoids polluting the cache with data that might never be read again.",
         },
       ],
     },
@@ -91,7 +91,7 @@ export const LESSON_04_CACHE: Lesson = {
       blocks: [
         {
           type: "p",
-          text: "Caches excel at read-heavy workloads where a small set of hot answers is requested over and over. They offer no benefit when every request is unique — there is nothing to reuse. And a low hit rate can actually hurt: you pay for the cache lookup on every request while still reaching the database on most of them.",
+          text: "Caches excel at read-heavy workloads where a small set of hot answers is requested over and over. They offer no benefit when every request is unique: there is nothing to reuse. And a low hit rate can actually hurt: you pay for the cache lookup on every request while still reaching the database on most of them.",
         },
       ],
     },

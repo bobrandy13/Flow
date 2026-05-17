@@ -74,43 +74,57 @@ describe("simulationInputSchema", () => {
 });
 
 describe("simulationResultSchema", () => {
-  it("accepts a minimal valid result", () => {
-    const result = {
-      frames: [
-        {
-          tick: 0,
-          perNode: {
-            n: {
-              inFlight: 0,
-              peakInFlight: 0,
-              utilization: 0,
-              servedTotal: 0,
-              droppedTotal: 0,
-              servedThisTick: 0,
-              droppedThisTick: 0,
-              pendingDepth: 0,
-              peakPendingDepth: 0,
-            },
+  const minimalResult = () => ({
+    frames: [
+      {
+        tick: 0,
+        perNode: {
+          n: {
+            inFlight: 0,
+            peakInFlight: 0,
+            utilization: 0,
+            servedTotal: 0,
+            droppedTotal: 0,
+            servedThisTick: 0,
+            droppedThisTick: 0,
+            pendingDepth: 0,
+            peakPendingDepth: 0,
           },
-          transitions: [],
-          metricsSoFar: { avgLatency: 0, p95Latency: 0, successRate: 1, drops: 0 },
-          phase: "steady" as const,
         },
-      ],
-      outcome: {
-        passed: true,
-        metrics: { avgLatency: 1, p95Latency: 2, successRate: 1, drops: 0 },
-        diagnosis: {
-          category: "passed_clean" as const,
-          headline: "Clean pass",
-          explanation: "",
-          culpritNodeIds: [],
-          evidence: [],
-          suggestions: [],
-        },
+        transitions: [],
+        metricsSoFar: { avgLatency: 0, p95Latency: 0, successRate: 1, drops: 0 },
+        phase: "steady" as const,
       },
-    };
+    ],
+    outcome: {
+      passed: true,
+      metrics: { avgLatency: 1, p95Latency: 2, successRate: 1, drops: 0 },
+      diagnosis: {
+        category: "passed_clean" as const,
+        headline: "Clean pass",
+        explanation: "",
+        culpritNodeIds: [],
+        evidence: [],
+        suggestions: [],
+      },
+    },
+  });
+
+  it("accepts a minimal valid result", () => {
+    const result = minimalResult();
     expect(() => simulationResultSchema.parse(result)).not.toThrow();
+  });
+
+  it("adds a friendly diagnosis when an older response omits diagnosis", () => {
+    const result = minimalResult();
+    delete (result.outcome as { diagnosis?: unknown }).diagnosis;
+
+    const parsed = simulationResultSchema.parse(result);
+
+    expect(parsed.outcome.diagnosis).toMatchObject({
+      category: "passed_clean",
+      headline: "Simulation completed",
+    });
   });
 });
 

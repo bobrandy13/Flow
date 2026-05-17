@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import LessonPage from "./page";
+import { GlossaryPanelProvider } from "@/lib/glossary/usePanelStore";
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: "05-smooth-the-burst" }),
@@ -14,7 +15,7 @@ describe("LessonPage", () => {
   });
 
   it("renders the level title, tagline, and section headings", () => {
-    render(<LessonPage />);
+    render(<GlossaryPanelProvider><LessonPage /></GlossaryPanelProvider>);
     // title comes from the level
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/burst/i);
     // at least one section heading
@@ -22,13 +23,13 @@ describe("LessonPage", () => {
   });
 
   it("renders a 'Start exercise' link to the play page", () => {
-    render(<LessonPage />);
+    render(<GlossaryPanelProvider><LessonPage /></GlossaryPanelProvider>);
     const link = screen.getByRole("link", { name: /start exercise/i });
     expect(link).toHaveAttribute("href", "/levels/05-smooth-the-burst/play");
   });
 
   it("marks the lesson as seen on mount", async () => {
-    render(<LessonPage />);
+    render(<GlossaryPanelProvider><LessonPage /></GlossaryPanelProvider>);
     // useEffect runs after render
     await new Promise((r) => setTimeout(r, 0));
     const raw = window.localStorage.getItem("flow.lessonsSeen.v1");
@@ -36,7 +37,7 @@ describe("LessonPage", () => {
   });
 
   it("renders the cheatsheet when present", () => {
-    render(<LessonPage />);
+    render(<GlossaryPanelProvider><LessonPage /></GlossaryPanelProvider>);
     expect(screen.getByText(/cheatsheet/i)).toBeInTheDocument();
   });
 });

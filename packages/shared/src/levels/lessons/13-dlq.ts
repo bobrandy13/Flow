@@ -1,7 +1,7 @@
 import type { Lesson } from "../../types/level";
 
 export const LESSON_13_DLQ: Lesson = {
-  tagline: "Don't drop failed messages on the floor — keep them for later.",
+  tagline: "Don't drop failed messages on the floor: keep them for later.",
   sections: [
     {
       heading: "The problem with silent drops",
@@ -25,23 +25,23 @@ export const LESSON_13_DLQ: Lesson = {
       blocks: [
         {
           type: "p",
-          text: "A dead-letter queue (DLQ) is a side channel for messages that could not be processed normally. Overflows, repeated processing failures, malformed messages — instead of disappearing, they land in the DLQ where operators can inspect them, understand why they failed, fix the underlying issue, and replay them when the system is healthy again.",
+          text: "A dead-letter queue (DLQ) is a side channel for messages that could not be processed normally. Overflows, repeated processing failures, malformed messages: instead of disappearing, they land in the DLQ where operators can inspect them, understand why they failed, fix the underlying issue, and replay them when the system is healthy again.",
         },
         {
           type: "p",
-          text: "In Flow, draw an edge from a queue to a target node, click the edge, and mark it as a dead-letter route. When the source queue overflows, messages that would have been dropped are instead routed to the DLQ target — typically a separate database kept for inspection.",
+          text: "In Flow, draw an edge from a queue to a target node, click the edge, and mark it as a dead-letter route. When the source queue overflows, messages that would have been dropped are instead routed to the DLQ target: typically a separate database kept for inspection.",
         },
         {
           type: "callout",
           tone: "info",
           title: "DLQ as observability",
-          text: "Even if you never replay a single message, having a DLQ means you can answer 'how much did we lose and why?' — which is infinitely better than 'I don't know' during an incident review.",
+          text: "Even if you never replay a single message, having a DLQ means you can answer 'how much did we lose and why?': which is infinitely better than 'I don't know' during an incident review.",
         },
       ],
     },
   ],
   cheatsheet: [
     "Mark a queue's overflow edge as DLQ to capture failed messages instead of losing them.",
-    "DLQ depth is a key alert signal — a growing DLQ means something is broken upstream.",
+    "DLQ depth is a key alert signal: a growing DLQ means something is broken upstream.",
   ],
 };

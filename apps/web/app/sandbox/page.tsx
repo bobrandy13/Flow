@@ -18,7 +18,6 @@ import { useDiagramEditor } from "@/lib/hooks/useDiagramEditor";
 import { useSimulation } from "@/lib/hooks/useSimulation";
 import { color, fontFamily } from "@/lib/ui/theme";
 import type { Diagram } from "@flow/shared/types/diagram";
-import { emptyDiagram } from "@flow/shared/types/diagram";
 
 const DEFAULT_WORKLOAD = {
   requestsPerTick: 2,
@@ -139,7 +138,7 @@ export default function SandboxPage() {
         onNew={handleNew}
       />
 
-      {/* Toolbar — just Run Simulation + Reset */}
+      {/* Toolbar: just Run Simulation + Reset */}
       <div
         style={{
           display: "flex",

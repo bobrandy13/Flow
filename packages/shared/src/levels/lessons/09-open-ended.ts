@@ -1,7 +1,7 @@
 import type { Lesson } from "../../types/level";
 
 export const LESSON_09_OPEN_ENDED: Lesson = {
-  tagline: "No new concepts here — just compose what you know.",
+  tagline: "No new concepts here: just compose what you know.",
   sections: [
     {
       heading: "Putting it together",
@@ -18,7 +18,7 @@ export const LESSON_09_OPEN_ENDED: Lesson = {
         },
         {
           type: "p",
-          text: "This level is a capstone: heavy traffic, a bursty workload, and a mix of reads and writes. Every tool you have learned so far is available — load balancers, caches, queues, shards, CDN — and there are multiple valid solutions. The goal is not to find the single correct answer but to build something that meets the SLA by methodically identifying and eliminating bottlenecks.",
+          text: "This level is a capstone: heavy traffic, a bursty workload, and a mix of reads and writes. Every tool you have learned so far is available (load balancers, caches, queues, shards, CDN) and there are multiple valid solutions. The goal is not to find the single correct answer but to build something that meets the SLA by methodically identifying and eliminating bottlenecks.",
         },
         {
           type: "bullets",
@@ -36,13 +36,13 @@ export const LESSON_09_OPEN_ENDED: Lesson = {
       blocks: [
         {
           type: "p",
-          text: "Resist the urge to design the whole thing upfront. Start with the simplest possible architecture, run the simulation, and watch what breaks. Find the bottleneck — the node where requests are dropping. Apply the smallest change that addresses it. Then run again. This iterative loop is exactly how real production systems evolve.",
+          text: "Resist the urge to design the whole thing upfront. Start with the simplest possible architecture, run the simulation, and watch what breaks. Find the bottleneck: the node where requests are dropping. Apply the smallest change that addresses it. Then run again. This iterative loop is exactly how real production systems evolve.",
         },
         {
           type: "callout",
           tone: "info",
           title: "Iterate, don't over-engineer",
-          text: "Start simple. Run the sim. Find the bottleneck. Apply the smallest fix. Repeat. The simulation logs tell you exactly which node is dropping requests — use them.",
+          text: "Start simple. Run the sim. Find the bottleneck. Apply the smallest fix. Repeat. The simulation logs tell you exactly which node is dropping requests: use them.",
         },
       ],
     },

@@ -1,7 +1,7 @@
 import type { Lesson } from "../../types/level";
 
 export const LESSON_10_REPLICATE_FAILOVER: Lesson = {
-  tagline: "One database is one outage waiting to happen — replicate to survive.",
+  tagline: "One database is one outage waiting to happen: replicate to survive.",
   sections: [
     {
       heading: "Why replication",
@@ -17,7 +17,7 @@ export const LESSON_10_REPLICATE_FAILOVER: Lesson = {
         },
         {
           type: "p",
-          text: "A single database is a single point of failure: when it goes down, every read and write fails instantly. Replication keeps copies of the same data on multiple nodes so that if one disappears, the others can keep serving traffic. Think of a replica like a backup singer who knows all the same songs — if the lead vocalist calls in sick, the show still goes on.",
+          text: "A single database is a single point of failure: when it goes down, every read and write fails instantly. Replication keeps copies of the same data on multiple nodes so that if one disappears, the others can keep serving traffic. Think of a replica like a backup singer who knows all the same songs: if the lead vocalist calls in sick, the show still goes on.",
         },
         {
           type: "p",
@@ -37,7 +37,7 @@ export const LESSON_10_REPLICATE_FAILOVER: Lesson = {
             },
             {
               term: "Partial availability",
-              description: "If the primary fails, replicas keep serving reads — your app stays partially up rather than completely dead.",
+              description: "If the primary fails, replicas keep serving reads: your app stays partially up rather than completely dead.",
             },
             {
               term: "Write limitation",
@@ -59,7 +59,7 @@ export const LESSON_10_REPLICATE_FAILOVER: Lesson = {
     },
   ],
   cheatsheet: [
-    "Replicate any database that holds important reads — even one extra copy buys survivability.",
+    "Replicate any database that holds important reads: even one extra copy buys survivability.",
     "Replication ≠ free. Lag means a replica might serve a slightly older value.",
   ],
 };

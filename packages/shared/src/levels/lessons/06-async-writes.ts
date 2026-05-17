@@ -26,8 +26,8 @@ export const LESSON_06_ASYNC_WRITES: Lesson = {
         {
           type: "bullets",
           items: [
-            "Sync: strong durability guarantee, slower response — the client waits for the full DB round-trip.",
-            "Async: fast acknowledgement, eventual durability — data is safe once the consumer processes it.",
+            "Sync: strong durability guarantee, slower response: the client waits for the full DB round-trip.",
+            "Async: fast acknowledgement, eventual durability: data is safe once the consumer processes it.",
             "Async throughput advantage compounds with load: the server is free instantly, so it handles the next request sooner.",
           ],
         },
@@ -44,7 +44,7 @@ export const LESSON_06_ASYNC_WRITES: Lesson = {
           type: "callout",
           tone: "warn",
           title: "The trade-off",
-          text: "If the consumer or queue crashes before draining, those writes are lost. In production, durable queues like Kafka or SQS mitigate this — but the fundamental trade-off remains: you are trading guaranteed immediate durability for speed and throughput.",
+          text: "If the consumer or queue crashes before draining, those writes are lost. In production, durable queues like Kafka or SQS mitigate this, but the fundamental trade-off remains: you are trading guaranteed immediate durability for speed and throughput.",
         },
       ],
     },

@@ -47,8 +47,8 @@ export function buildSimulationLogs(input: BuildLogsInput): string {
   lines.push("--- Final metrics ---");
   const m = outcome.metrics;
   lines.push(`Success rate : ${(m.successRate * 100).toFixed(1)}%`);
-  lines.push(`Avg latency  : ${ticksToMs(m.avgLatency)} ms (${m.avgLatency.toFixed(2)} ticks)`);
-  lines.push(`p95 latency  : ${ticksToMs(m.p95Latency)} ms (${m.p95Latency.toFixed(2)} ticks)`);
+  lines.push(`Avg latency  : ${formatMs(ticksToMs(m.avgLatency))} ms (${m.avgLatency.toFixed(2)} ticks)`);
+  lines.push(`p95 latency  : ${formatMs(ticksToMs(m.p95Latency))} ms (${m.p95Latency.toFixed(2)} ticks)`);
   lines.push(`Drops        : ${m.drops}`);
   if (m.bottleneckNodeId) {
     const node = diagram.nodes.find((n) => n.id === m.bottleneckNodeId);
@@ -59,9 +59,11 @@ export function buildSimulationLogs(input: BuildLogsInput): string {
   if (Object.keys(perNode).length > 0) {
     lines.push("");
     lines.push("--- Per-node summary (final tick) ---");
+    const idWidth = Math.max(14, ...diagram.nodes.map((node) => node.id.length)) + 2;
+    const kindWidth = Math.max(16, ...diagram.nodes.map((node) => COMPONENT_SPECS[node.kind].label.length)) + 2;
     lines.push(
-      "id".padEnd(14) +
-        "kind".padEnd(16) +
+      "id".padEnd(idWidth) +
+        "kind".padEnd(kindWidth) +
         "served".padStart(8) +
         "dropped".padStart(9) +
         "peakInFlt".padStart(11) +
@@ -75,20 +77,27 @@ export function buildSimulationLogs(input: BuildLogsInput): string {
       const cap = Number.isFinite(spec.capacity) ? spec.capacity : null;
       const peakUtil = cap && cap > 0 ? snap.peakInFlight / cap : 0;
       lines.push(
-        node.id.padEnd(14).slice(0, 14) +
-          node.kind.padEnd(16) +
+        node.id.padEnd(idWidth) +
+          COMPONENT_SPECS[node.kind].label.padEnd(kindWidth) +
           String(snap.servedTotal).padStart(8) +
           String(snap.droppedTotal).padStart(9) +
           String(snap.peakInFlight).padStart(11) +
           String(cap ?? "∞").padStart(7) +
-          (cap ? `${(peakUtil * 100).toFixed(0)}%` : "—").padStart(11),
+          (cap ? `${(peakUtil * 100).toFixed(0)}%` : "-").padStart(11),
       );
       if (node.kind === "queue") {
         lines.push(
-          " ".repeat(14) +
+          " ".repeat(idWidth) +
             `peakPendingDepth=${snap.peakPendingDepth} (currently ${snap.pendingDepth})`,
         );
       }
+    }
+
+    const queueNotes = buildQueueNotes(diagram, perNode);
+    if (queueNotes.length > 0) {
+      lines.push("");
+      lines.push("--- Queue notes ---");
+      lines.push(...queueNotes);
     }
 
     const droppedNodes = diagram.nodes
@@ -101,12 +110,12 @@ export function buildSimulationLogs(input: BuildLogsInput): string {
         const snap = perNode[n.id]!;
         const spec = COMPONENT_SPECS[n.kind];
         lines.push(
-          `${spec.emoji} ${spec.label} (${n.id}): ${snap.droppedTotal} dropped — capacity ${Number.isFinite(spec.capacity) ? spec.capacity : "∞"} reached when a new request arrived with no free slot.`,
+          `${spec.emoji} ${spec.label} (${n.id}): ${snap.droppedTotal} dropped. Capacity ${Number.isFinite(spec.capacity) ? spec.capacity : "∞"} was reached when a new request arrived with no free slot.`,
         );
       }
     } else if (m.drops === 0) {
       lines.push("");
-      lines.push("Note: no drops. (A node hitting peak inFlight = capacity is fine — drops only occur when a *new* request arrives at a node already at capacity.)");
+      lines.push("Note: no drops. (A node hitting peak inFlight = capacity is fine. Drops only occur when a new request arrives at a node already at capacity.)");
     }
   }
 
@@ -137,4 +146,42 @@ export function buildSimulationLogs(input: BuildLogsInput): string {
   lines.push(JSON.stringify(exportDiagram(diagram), null, 2));
 
   return lines.join("\n");
+}
+
+function formatMs(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function buildQueueNotes(diagram: Diagram, perNode: TickFrame["perNode"]): string[] {
+  const notes: string[] = [];
+  for (const queue of diagram.nodes.filter((node) => node.kind === "queue")) {
+    const queueSnap = perNode[queue.id];
+    if (!queueSnap) continue;
+    const consumers = diagram.edges
+      .filter((edge) => edge.fromNodeId === queue.id)
+      .map((edge) => diagram.nodes.find((node) => node.id === edge.toNodeId))
+      .filter((node): node is Diagram["nodes"][number] => Boolean(node));
+    if (consumers.length === 0) {
+      notes.push(`Queue ${queue.id} has no consumer edge. Add Queue -> Database or Queue -> Server so jobs can drain.`);
+      continue;
+    }
+    const consumerLabels = consumers
+      .map((node) => `${COMPONENT_SPECS[node.kind].label} (${node.id})`)
+      .join(", ");
+    notes.push(
+      `Queue ${queue.id} buffered up to ${queueSnap.peakPendingDepth} jobs. Its consumer path is ${consumerLabels}.`,
+    );
+    for (const consumer of consumers) {
+      const snap = perNode[consumer.id];
+      const spec = COMPONENT_SPECS[consumer.kind];
+      if (!snap) continue;
+      const cap = Number.isFinite(spec.capacity) ? spec.capacity : null;
+      if (cap && snap.peakInFlight >= cap && snap.droppedTotal === 0) {
+        notes.push(
+          `${spec.label} (${consumer.id}) reached full capacity while draining the queue, but dropped nothing. That means the queue smoothed arrivals and kept it busy rather than overloaded.`,
+        );
+      }
+    }
+  }
+  return notes;
 }

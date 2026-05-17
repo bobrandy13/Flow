@@ -16,11 +16,11 @@ export const LESSON_02_PERSISTENCE: Lesson = {
         },
         {
           type: "p",
-          text: "A server is a stateless machine — it processes each request independently and remembers nothing between calls. That is a feature, not a bug: it means you can run ten identical servers simultaneously and it does not matter which one handles your request. But statelessness also means a server cannot hold onto data. Restart it, and everything it held in memory is gone.",
+          text: "A server is a stateless machine: it processes each request independently and remembers nothing between calls. That is a feature, not a bug: it means you can run ten identical servers simultaneously and it does not matter which one handles your request. But statelessness also means a server cannot hold onto data. Restart it, and everything it held in memory is gone.",
         },
         {
           type: "p",
-          text: "A database is the opposite: stateful by design. Think of it as an accountant's ledger — it holds the canonical record of everything your system knows, from user accounts to transaction histories. Separating compute (the server) from storage (the database) means you can scale each independently: add servers for processing power, scale the database for storage.",
+          text: "A database is the opposite: stateful by design. It is the permanent record of everything your system knows, from user accounts to transaction histories. Separating compute (the server) from storage (the database) means you can scale each independently: add servers for processing power, scale the database for storage.",
         },
         {
           type: "code",
@@ -52,7 +52,7 @@ export const LESSON_02_PERSISTENCE: Lesson = {
           type: "callout",
           tone: "info",
           title: "Spotting a bottleneck",
-          text: "Watch for any node where peak in-flight equals its capacity AND new arrivals are being dropped. That's your bottleneck — the constraint limiting the whole system's throughput.",
+          text: "Watch for any node where peak in-flight equals its capacity AND new arrivals are being dropped. That's your bottleneck: the constraint limiting the whole system's throughput.",
         },
       ],
     },

@@ -1,7 +1,7 @@
 import type { Lesson } from "../../types/level";
 
 export const LESSON_15_TWO_CONTINENTS: Lesson = {
-  tagline: "Light is fast — but not THAT fast. Distance shows up in your p95.",
+  tagline: "Light is fast, but not THAT fast. Distance shows up in your p95.",
   sections: [
     {
       heading: "The speed of light tax",
@@ -17,7 +17,7 @@ export const LESSON_15_TWO_CONTINENTS: Lesson = {
         },
         {
           type: "p",
-          text: "Bits travel through fibre optic cables at roughly 200,000 km/s. London to New York and back is about 11,000 km of cable — that is 55ms of pure physics before your server even begins processing. Add TCP handshakes, TLS negotiation, routing hops, and switch queuing, and a cross-ocean round trip is easily 80–120ms. That is not something you can optimise away with better code.",
+          text: "Bits travel through fibre optic cables at roughly 200,000 km/s. London to New York and back is about 11,000 km of cable: that is 55ms of pure physics before your server even begins processing. Add TCP handshakes, TLS negotiation, routing hops, and switch queuing, and a cross-ocean round trip is easily 80–120ms. That is not something you can optimise away with better code.",
         },
         {
           type: "p",
@@ -35,7 +35,7 @@ export const LESSON_15_TWO_CONTINENTS: Lesson = {
         {
           type: "bullets",
           items: [
-            "p95 latency is dominated by the slowest 5% of requests — exactly the ones that crossed the ocean.",
+            "p95 latency is dominated by the slowest 5% of requests: exactly the ones that crossed the ocean.",
             "A high CDN hit rate in the user's region means most requests never cross, keeping p95 tight.",
             "Only cache misses and writes need to traverse the cross-region link.",
           ],
@@ -50,7 +50,7 @@ export const LESSON_15_TWO_CONTINENTS: Lesson = {
     },
   ],
   cheatsheet: [
-    "Users far from your origin? A regional edge cache isn't optional — it's required for p95.",
+    "Users far from your origin? A regional edge cache isn't optional: it's required for p95.",
     "Cross-region hops blow up p95 latency disproportionately. Minimise them.",
   ],
 };

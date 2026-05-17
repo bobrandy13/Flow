@@ -1,7 +1,7 @@
 import type { Lesson } from "../../types/level";
 
 export const LESSON_08_READ_WRITE_SPLIT: Lesson = {
-  tagline: "Reads and writes have different shapes — give them different paths.",
+  tagline: "Reads and writes have different shapes: give them different paths.",
   sections: [
     {
       heading: "Asymmetric workloads",
@@ -22,7 +22,7 @@ export const LESSON_08_READ_WRITE_SPLIT: Lesson = {
         },
         {
           type: "p",
-          text: "Reads love caching — the same answer served over and over to different users. Writes benefit from queuing — smooth out bursts and decouple acknowledgement from durability. A single undifferentiated path for everything means you optimise for neither.",
+          text: "Reads love caching: the same answer served over and over to different users. Writes benefit from queuing: smooth out bursts and decouple acknowledgement from durability. A single undifferentiated path for everything means you optimise for neither.",
         },
       ],
     },
@@ -46,7 +46,7 @@ export const LESSON_08_READ_WRITE_SPLIT: Lesson = {
           type: "callout",
           tone: "success",
           title: "The big idea",
-          text: "Real architectures aren't a single pattern — they're a stack of well-understood patterns layered on top of each other, each chosen because it removes a specific bottleneck. Recognising which lever to pull on which path is the core skill of system design.",
+          text: "Real architectures aren't a single pattern: they're a stack of well-understood patterns layered on top of each other, each chosen because it removes a specific bottleneck. Recognising which lever to pull on which path is the core skill of system design.",
         },
       ],
     },

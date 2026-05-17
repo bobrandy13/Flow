@@ -17,7 +17,7 @@ interface ToolbarProps {
 }
 
 /**
- * Instrument-panel style toolbar — flat, uppercase, drop-shadowed buttons.
+ * Instrument-panel style toolbar: flat, uppercase, drop-shadowed buttons.
  * Each button uses a coloured top stripe + flat inset shadow to feel like
  * an industrial pushbutton.
  */
@@ -31,7 +31,7 @@ export function Toolbar({
   runDisabled,
   runDisabledReason,
 }: ToolbarProps) {
-  const runIsDisabled = isSimulating || runDisabled;
+  const runIsDisabled = Boolean(isSimulating || runDisabled);
   return (
     <div
       style={{
@@ -116,7 +116,7 @@ function ToolButton({
     <button
       type="button"
       onClick={onClick}
-      disabled={disabled}
+      disabled={Boolean(disabled)}
       title={title}
       aria-label={ariaLabel}
       style={{

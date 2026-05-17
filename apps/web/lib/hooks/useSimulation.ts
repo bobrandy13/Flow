@@ -3,11 +3,40 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SimulationInput } from "@flow/shared/simulation/simulator";
 import type { SimulationOutcome, TickFrame } from "@flow/shared/types/validation";
-import { simulationResultSchema } from "@flow/shared/schemas/sim";
+import { simulationResultSchema, type SimulationResult } from "@flow/shared/schemas/sim";
 
-const API_BASE =
-  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_BASE_URL) ||
-  "http://localhost:4000";
+const LOCAL_API_BASE = "http://localhost:4000";
+
+export function getSimulationApiBase(env = process.env): string {
+  if (env.NODE_ENV === "development") return LOCAL_API_BASE;
+  return env.NEXT_PUBLIC_API_BASE_URL || LOCAL_API_BASE;
+}
+
+const API_BASE = getSimulationApiBase();
+
+function parseSimulationResponse(json: unknown): SimulationResult {
+  const parsed = simulationResultSchema.safeParse(json);
+  if (!parsed.success) {
+    throw new Error(
+      "The simulation service returned an unexpected response. Please retry the simulation.",
+    );
+  }
+  return parsed.data;
+}
+
+async function readSimulationError(res: Response): Promise<string> {
+  const fallback = res.statusText || "Please try again.";
+  const text = await res.text().catch(() => "");
+  if (!text) return fallback;
+  try {
+    const json = JSON.parse(text) as { message?: unknown; error?: unknown };
+    if (typeof json.message === "string" && json.message.trim()) return json.message;
+    if (typeof json.error === "string" && json.error.trim()) return json.error;
+  } catch {
+    return fallback;
+  }
+  return fallback;
+}
 
 export interface UseSimulationResult {
   frame: TickFrame | null;
@@ -162,11 +191,11 @@ export function useSimulation(input: SimulationInput | null): UseSimulationResul
         signal: controller.signal,
       });
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`Simulate failed (${res.status}): ${text || res.statusText}`);
+        const message = await readSimulationError(res);
+        throw new Error(`Simulation failed (${res.status}). ${message}`);
       }
       const json = await res.json();
-      const parsed = simulationResultSchema.parse(json);
+      const parsed = parseSimulationResponse(json);
       // The wire schema infers structurally-identical shapes to the engine
       // types, but with looser config typing — cast at the boundary.
       framesRef.current = parsed.frames as unknown as TickFrame[];

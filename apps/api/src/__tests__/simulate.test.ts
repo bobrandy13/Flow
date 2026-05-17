@@ -18,7 +18,11 @@ const validInput = () => ({
 describe("POST /api/simulate", () => {
   let app: FastifyInstance;
   beforeAll(async () => {
-    app = await buildApp({ disableRateLimit: true, corsOrigins: ["*"] });
+    app = await buildApp({
+      disableRateLimit: true,
+      allowLocalhost: true,
+      corsOrigins: ["*"],
+    });
     await app.ready();
   });
   afterAll(async () => {
@@ -89,6 +93,73 @@ describe("POST /api/simulate", () => {
     });
     const sizeKb = Buffer.byteLength(res.body) / 1024;
     expect(sizeKb).toBeLessThan(500);
+  });
+
+  it("rejects requests over the 64KB body limit with 413", async () => {
+    const padded = {
+      ...validInput(),
+      // 100KB of junk in a non-strict spot of the payload
+      _padding: "x".repeat(100 * 1024),
+    };
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/simulate",
+      payload: padded,
+    });
+    expect(res.statusCode).toBe(413);
+  });
+});
+
+describe("POST /api/simulate — CPU budget", () => {
+  let app: FastifyInstance;
+  beforeAll(async () => {
+    // 0ms budget guarantees the first deadline check trips.
+    app = await buildApp({
+      disableRateLimit: true,
+      allowLocalhost: true,
+      corsOrigins: ["*"],
+      simulationBudgetMs: 0,
+    });
+    await app.ready();
+  });
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("returns 408 SimulationTimeout when the budget is exceeded", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/simulate",
+      payload: validInput(),
+    });
+    expect(res.statusCode).toBe(408);
+    expect(res.json()).toMatchObject({ error: "SimulationTimeout" });
+  });
+});
+
+describe("trustProxy", () => {
+  let app: FastifyInstance;
+  let observedIp = "";
+  beforeAll(async () => {
+    app = await buildApp({ disableRateLimit: true, allowLocalhost: true });
+    app.get("/__whoami", async (req) => {
+      observedIp = req.ip;
+      return { ip: req.ip };
+    });
+    await app.ready();
+  });
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("derives request.ip from X-Forwarded-For so rate-limiting buckets the real client", async () => {
+    await app.inject({
+      method: "GET",
+      url: "/__whoami",
+      headers: { "x-forwarded-for": "203.0.113.42, 10.0.0.1" },
+    });
+
+    expect(observedIp).toBe("203.0.113.42");
   });
 });
 

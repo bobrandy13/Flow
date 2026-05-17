@@ -106,7 +106,7 @@ export const LEVELS: Level[] = [
     chapter: "Scaling",
     lesson: LESSON_05_QUEUE_BURST,
     brief:
-      "Traffic isn't uniform — bursts will overload a synchronous service. Spread the work across multiple servers behind a load balancer, and place a queue between them and the database so spikes are absorbed instead of dropped.",
+      "Traffic isn't uniform: bursts will overload a synchronous service. Spread requests across servers, then queue the database-write jobs so the database can drain them at its own steady pace.",
     allowedComponents: ["client", "load_balancer", "server", "queue", "database"],
     maxOf: { client: 1, load_balancer: 1, server: 4, queue: 1, database: 1 },
     rules: [
@@ -134,7 +134,7 @@ export const LEVELS: Level[] = [
     chapter: "Scaling",
     lesson: LESSON_06_ASYNC_WRITES,
     brief:
-      "Writes don't need a synchronous round-trip to the database — load-balance multiple servers, accept the request, queue the work, and let the database drain at its own pace. Acknowledge fast, persist eventually.",
+      "Writes don't need a synchronous round-trip to the database: load-balance multiple servers, accept the request, queue the work, and let the database drain at its own pace. Acknowledge fast, persist eventually.",
     allowedComponents: ["client", "load_balancer", "server", "queue", "database"],
     maxOf: { client: 1, load_balancer: 1, server: 4, queue: 1, database: 1 },
     rules: [
@@ -220,7 +220,7 @@ export const LEVELS: Level[] = [
     chapter: "Composition",
     lesson: LESSON_09_OPEN_ENDED,
     brief:
-      "Big traffic, full toolbox. There's no single right answer — combine load balancers, caches, queues, and shards however you like. The simulation is the only judge.",
+      "Big traffic, full toolbox. There's no single right answer: combine load balancers, caches, queues, and shards however you like. The simulation is the only judge.",
     allowedComponents: [
       "client",
       "load_balancer",

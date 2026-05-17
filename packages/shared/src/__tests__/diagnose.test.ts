@@ -187,6 +187,77 @@ describe("diagnose() — failure probes", () => {
     expect(d.culpritNodeIds).toContain("rl");
   });
 
+  it("cache_underused: cache is disconnected while the server still hits the database", () => {
+    const diagram: Diagram = {
+      nodes: [
+        { id: "c", kind: "client", position: { x: 0, y: 0 } },
+        { id: "s", kind: "server", position: { x: 0, y: 0 } },
+        { id: "db", kind: "database", position: { x: 0, y: 0 } },
+        { id: "ca", kind: "cache", position: { x: 0, y: 0 } },
+      ],
+      edges: [
+        { id: "e1", fromNodeId: "c", toNodeId: "s" },
+        { id: "e2", fromNodeId: "s", toNodeId: "db" },
+      ],
+    };
+    const d = diagnose({
+      diagram,
+      workload: WL_EMPTY,
+      sla: { minSuccessRate: 0.9, maxP95Latency: 40 },
+      finalFrame: frame({
+        c: snap({ servedTotal: 1331, peakInFlight: 23 }),
+        s: snap({ servedTotal: 2695, droppedTotal: 829, peakInFlight: COMPONENT_SPECS.server.capacity }),
+        db: snap({ servedTotal: 1364, peakInFlight: 90 }),
+        ca: snap({ servedTotal: 0, peakInFlight: 0 }),
+      }),
+      outcome: {
+        passed: false,
+        metrics: {
+          avgLatency: 10.99,
+          p95Latency: 12,
+          successRate: 0.616,
+          drops: 829,
+          bottleneckNodeId: "s",
+        },
+      },
+    });
+
+    expect(d.category).toBe("cache_underused");
+    expect(d.headline).toMatch(/traffic is not using it/i);
+    expect(d.explanation).toContain("Server -> Database");
+    expect(d.explanation).toContain("served 0 requests");
+    expect(d.suggestions).toContain("Connect the server to the cache, then connect the cache to the database.");
+  });
+
+  it("cache_underused: CDN is present but origin traffic bypasses it", () => {
+    const diagram: Diagram = {
+      nodes: [
+        { id: "c", kind: "client", position: { x: 0, y: 0 } },
+        { id: "cdn", kind: "cdn", position: { x: 0, y: 0 } },
+        { id: "s", kind: "server", position: { x: 0, y: 0 } },
+      ],
+      edges: [{ id: "e1", fromNodeId: "c", toNodeId: "s" }],
+    };
+    const d = diagnose({
+      diagram,
+      workload: WL_EMPTY,
+      sla: SLA_BASE,
+      finalFrame: frame({
+        cdn: snap({ servedTotal: 0 }),
+        s: snap({ droppedTotal: 120, peakInFlight: COMPONENT_SPECS.server.capacity }),
+      }),
+      outcome: {
+        passed: false,
+        metrics: { avgLatency: 8, p95Latency: 15, successRate: 0.5, drops: 120, bottleneckNodeId: "s" },
+      },
+    });
+
+    expect(d.category).toBe("cache_underused");
+    expect(d.headline).toMatch(/cdn/i);
+    expect(d.explanation).toContain("Client -> Server");
+    expect(d.suggestions).toContain("Connect the client to the CDN first, then connect the CDN to your origin server or load balancer.");
+  });
+
   it("node_overloaded: a server dominates drops and hit its cap", () => {
     const serverCap = COMPONENT_SPECS.server.capacity;
     const diagram: Diagram = {

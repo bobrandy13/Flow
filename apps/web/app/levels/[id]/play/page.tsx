@@ -49,7 +49,7 @@ export default function PlayPage() {
 
   // Build the SimulationInput (or null when prerequisites aren't met). We
   // intentionally key the input by the diagram + level identity, NOT by
-  // structural validity — the player should always be able to press Play and
+  // structural validity: the player should always be able to press Play and
   // see *something* happen (even a sim that produces drops because rules fail).
   const simInput = useMemo(() => {
     if (!level) return null;
@@ -90,7 +90,7 @@ export default function PlayPage() {
     const ruleResults = evaluateRules(diagram, level.rules);
     const structuralPassed = ruleResults.every((r) => r.passed);
     setBaseReport({ structuralPassed, ruleResults });
-    // Always try to run the simulation — the player should be able to
+    // Always try to run the simulation: the player should be able to
     // experiment with broken or incomplete designs and watch what happens
     // (e.g. drop a queue from "Smooth the Burst" and see the server melt).
     // Completion is gated on rules + sim passing in the effect below.
@@ -99,14 +99,14 @@ export default function PlayPage() {
       // Defer to next microtask so reset state is committed before play().
       Promise.resolve().then(() => sim.play());
     } else {
-      // Truly nothing to simulate — record the attempt so the level shows
+      // Truly nothing to simulate: record the attempt so the level shows
       // up as "tried" but skip the network round-trip.
       recordAttempt(level.id, diagram);
     }
   }, [diagram, level, sim]);
 
   // When the streaming run finishes, persist progress. Completion requires
-  // BOTH the structural rules and the simulation SLA to pass — sandbox runs
+  // BOTH the structural rules and the simulation SLA to pass. Sandbox runs
   // (rules failing) only ever count as attempts.
   useEffect(() => {
     if (!sim.outcome || !level) return;
@@ -147,7 +147,7 @@ export default function PlayPage() {
         }
         flashToast(successMsg);
       } catch {
-        flashToast("Copy failed — check clipboard permissions");
+        flashToast("Copy failed: check clipboard permissions");
       }
     },
     [flashToast],
@@ -290,7 +290,7 @@ export default function PlayPage() {
           </span>
           <div style={{ flex: 1, color: color.text }}>
             <div style={{ fontFamily: fontFamily.display, letterSpacing: 1, textTransform: "uppercase", color: color.highlight, marginBottom: 4 }}>
-              Sandbox run — won&apos;t count toward completion.
+              Sandbox run: won&apos;t count toward completion.
             </div>
             <div style={{ color: color.textMuted, marginBottom: 4 }}>
               The simulation runs, but the level&apos;s rules aren&apos;t satisfied yet. Address the items below to earn the stamp:
@@ -405,6 +405,7 @@ export default function PlayPage() {
               diagram={diagram}
               selectedNodeId={selectedNodeId}
               runtime={selectedNodeId ? sim.frame?.perNode[selectedNodeId] : undefined}
+              maxOf={level.maxOf}
               onChange={handleDiagramChange}
             />
             <EdgeInspector diagram={diagram} selectedEdgeId={selectedEdgeId} onChange={handleDiagramChange} />

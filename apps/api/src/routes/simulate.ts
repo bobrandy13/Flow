@@ -21,9 +21,22 @@ import {
   MAX_FRAMES,
   type SimulationInput,
 } from "@flow/shared/schemas/sim";
-import { runSimulation } from "@flow/shared/simulation/run";
+import {
+  runSimulation,
+  SimulationTimeoutError,
+} from "@flow/shared/simulation/run";
 
-export const simulateRoute: FastifyPluginAsync = async (fastify) => {
+export interface SimulateRouteOptions {
+  /** Wall-clock CPU budget per request. */
+  simulationBudgetMs: number;
+}
+
+export const simulateRoute: FastifyPluginAsync<SimulateRouteOptions> = async (
+  fastify,
+  opts,
+) => {
+  const budgetMs = opts.simulationBudgetMs;
+
   fastify.withTypeProvider<ZodTypeProvider>().post(
     "/api/simulate",
     {
@@ -34,8 +47,6 @@ export const simulateRoute: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const input = request.body as SimulationInput;
 
-      // Catch oversized workloads BEFORE running the simulator. The drain
-      // horizon mirrors the simulator's internal `maxTicks` formula.
       const drainedTicks = input.workload.ticks * 4 + 200;
       if (drainedTicks > MAX_FRAMES) {
         return reply.code(400).send({
@@ -44,10 +55,30 @@ export const simulateRoute: FastifyPluginAsync = async (fastify) => {
         });
       }
 
-      const result = runSimulation(input as Parameters<typeof runSimulation>[0]);
-
-      reply.header("Cache-Control", "public, max-age=60, stale-while-revalidate=600");
-      return result;
+      try {
+        const result = runSimulation(
+          input as Parameters<typeof runSimulation>[0],
+          { deadlineMs: budgetMs },
+        );
+        reply.header(
+          "Cache-Control",
+          "public, max-age=60, stale-while-revalidate=600",
+        );
+        return result;
+      } catch (err) {
+        if (err instanceof SimulationTimeoutError) {
+          request.log.warn(
+            { budgetMs, nodes: input.diagram.nodes.length, edges: input.diagram.edges.length },
+            "simulation timed out",
+          );
+          return reply.code(408).send({
+            error: "SimulationTimeout",
+            message:
+              "This simulation took too long to run. Try a smaller diagram or fewer ticks.",
+          });
+        }
+        throw err;
+      }
     },
   );
 };

@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts",
-    "start:prod": "tsx src/server.ts",
-    "build": "tsc",
+    "start": "node dist/server.js",
+    "start:prod": "node dist/server.js",
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/server.js --external:fastify --external:@fastify/cors --external:@fastify/compress --external:@fastify/rate-limit --external:fastify-type-provider-zod --external:zod --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\"",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
@@ -19,12 +19,13 @@
     "@flow/shared": "workspace:*",
     "fastify": "^5",
     "fastify-type-provider-zod": "^5",
-    "tsx": "^4",
     "zod": "^3"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "esbuild": "^0.27.0",
     "eslint": "^9",
+    "tsx": "^4",
     "typescript": "^5",
     "typescript-eslint": "^8",
     "vitest": "^4.1.5"

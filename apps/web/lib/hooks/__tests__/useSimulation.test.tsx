@@ -62,6 +62,15 @@ function mockFetchOk(frames: TickFrame[]) {
   );
 }
 
+function mockFetchJson(body: unknown) {
+  return vi.spyOn(globalThis, "fetch").mockResolvedValue(
+    new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
+}
+
 describe("useSimulation (fetch + replay)", () => {
   beforeEach(() => {
     let nextRaf = 0;
@@ -113,6 +122,40 @@ describe("useSimulation (fetch + replay)", () => {
     expect(result.current.outcome).not.toBeNull();
     expect(result.current.outcome?.passed).toBe(true);
     expect(result.current.isRunning).toBe(false);
+  });
+
+  it("accepts older API responses that omit outcome.diagnosis", async () => {
+    mockFetchJson({
+      frames: makeFrames(1),
+      outcome: {
+        passed: true,
+        metrics: { avgLatency: 1, p95Latency: 2, successRate: 1, drops: 0 },
+      },
+    });
+    const { result } = renderHook(() => useSimulation(input));
+    act(() => { result.current.setSpeed(32); });
+    act(() => { result.current.play(); });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    drainRaf();
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.outcome?.diagnosis.headline).toBe("Simulation completed");
+  });
+
+  it("shows a friendly error when the API response has an unexpected shape", async () => {
+    mockFetchJson({
+      frames: makeFrames(1),
+      outcome: { passed: true },
+    });
+    const { result } = renderHook(() => useSimulation(input));
+    act(() => { result.current.play(); });
+
+    await waitFor(() => expect(result.current.error).not.toBeNull());
+
+    expect(result.current.error).toBe(
+      "The simulation service returned an unexpected response. Please retry the simulation.",
+    );
   });
 
   it("surfaces an error when the API responds with non-2xx", async () => {

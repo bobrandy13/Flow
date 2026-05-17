@@ -1,5 +1,5 @@
 /**
- * Glossary of system design terms — displayed as interactive inline tooltips
+ * Glossary of system design terms: displayed as interactive inline tooltips
  * throughout lesson content. Each entry provides a beginner-friendly definition,
  * why it matters, and an optional real-world analogy.
  */
@@ -33,11 +33,11 @@ export interface GlossaryEntry {
 export const GLOSSARY: Record<string, GlossaryEntry> = {
   "stateless": {
     term: "Stateless",
-    eli5: "A service with no memory — every request carries all the info it needs.",
+    eli5: "A service with no memory: every request carries all the info it needs.",
     definition:
       "A stateless service doesn't remember previous requests. Every request contains all the information needed to process it independently.",
     relevance:
-      "Makes horizontal scaling trivial — any server can handle any request, so you just add more servers behind a load balancer.",
+      "Makes horizontal scaling trivial: any server can handle any request, so you just add more servers behind a load balancer.",
     analogy:
       "Like a vending machine: it doesn't know who you are or what you bought last time. You put in money and make a selection, and it dispenses.",
     category: "concept",
@@ -51,7 +51,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Stateful",
     eli5: "A service that remembers past interactions with a user or session.",
     definition:
-      "A stateful service remembers information between requests — session data, in-progress transactions, or cached computation.",
+      "A stateful service remembers information between requests: session data, in-progress transactions, or cached computation.",
     relevance:
       "Harder to scale because requests for the same state must route to the same instance, but sometimes necessary for performance or correctness.",
     category: "concept",
@@ -69,7 +69,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     relevance:
       "Critical for retry safety. If a network hiccup causes a duplicate request, an idempotent endpoint won't accidentally charge a user twice.",
     analogy:
-      "Like pressing an elevator button — pressing it five times doesn't call five elevators.",
+      "Like pressing an elevator button: pressing it five times doesn't call five elevators.",
     category: "concept",
     whenToUse: [
       "Building APIs that clients will retry on failure",
@@ -85,7 +85,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     relevance:
       "Essential for safe retries in distributed systems. Network failures are inevitable; idempotent operations make retries harmless.",
     analogy:
-      "Setting a thermostat to 72°F — doing it ten times still results in 72°F.",
+      "Setting a thermostat to 72°F: doing it ten times still results in 72°F.",
     category: "concept",
     whenToUse: [
       "Designing retry-safe endpoints and operations",
@@ -113,7 +113,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "round-robin": {
     term: "Round-Robin",
-    eli5: "Take turns — send request 1 to Server A, request 2 to Server B, and repeat.",
+    eli5: "Take turns: send request 1 to Server A, request 2 to Server B, and repeat.",
     definition:
       "A distribution strategy that sends each new request to the next server in a rotating sequence: 1, 2, 3, 1, 2, 3...",
     relevance:
@@ -133,7 +133,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     relevance:
       "The primary way to scale write throughput beyond what a single database can handle. Aggregate capacity grows linearly with shard count.",
     analogy:
-      "Like splitting a phone book into volumes A–M and N–Z — each volume is smaller and faster to search.",
+      "Like splitting a phone book into volumes A–M and N–Z: each volume is smaller and faster to search.",
     category: "pattern",
     whenToUse: [
       "Your single database can't handle the write throughput you need",
@@ -145,9 +145,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "shard": {
     term: "Shard",
-    eli5: "One slice of a split database — a node that holds its own piece of the data.",
+    eli5: "One slice of a split database: a node that holds its own piece of the data.",
     definition:
-      "One partition in a sharded system — a database instance responsible for a subset of the total data.",
+      "One partition in a sharded system: a database instance responsible for a subset of the total data.",
     relevance:
       "Each shard operates independently. If one shard is slow or down, only the users whose data lives on that shard are affected.",
     category: "component",
@@ -195,7 +195,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     definition:
       "A copy of a database that receives replicated writes from the primary and serves read traffic independently.",
     relevance:
-      "Replicas multiply your read capacity and provide failover. The trade-off is replication lag — replicas may briefly show stale data.",
+      "Replicas multiply your read capacity and provide failover. The trade-off is replication lag: replicas may briefly show stale data.",
     category: "component",
     whenToUse: [
       "You need extra read throughput beyond what one database can serve",
@@ -221,13 +221,13 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "eventual consistency": {
     term: "Eventual Consistency",
-    eli5: "All copies of your data will agree eventually — just not necessarily right now.",
+    eli5: "All copies of your data will agree eventually: just not necessarily right now.",
     definition:
       "A consistency model where all replicas will converge to the same value eventually, but reads may temporarily return stale data.",
     relevance:
       "The trade-off you accept for higher availability and lower latency. Most social media, analytics, and notification systems are eventually consistent.",
     analogy:
-      "Like updating your profile picture — friends on different servers might see the old one for a few seconds before it propagates everywhere.",
+      "Like updating your profile picture: friends on different servers might see the old one for a few seconds before it propagates everywhere.",
     category: "concept",
     whenToUse: [
       "High availability matters more than instant consistency",
@@ -237,7 +237,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "strong consistency": {
     term: "Strong Consistency",
-    eli5: "After you write data, every reader instantly sees your change — no exceptions.",
+    eli5: "After you write data, every reader instantly sees your change: no exceptions.",
     definition:
       "A guarantee that after a write completes, all subsequent reads will return the updated value, no matter which replica they hit.",
     relevance:
@@ -253,7 +253,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Latency",
     eli5: "How long it takes from clicking a button to seeing the result on screen.",
     definition:
-      "The time between sending a request and receiving a response — the end-to-end delay a user actually experiences.",
+      "The time between sending a request and receiving a response: the end-to-end delay a user actually experiences.",
     relevance:
       "The metric users feel most directly. Every additional network hop, queue wait, or computation adds latency.",
     analogy:
@@ -269,7 +269,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Throughput",
     eli5: "How many requests your system can handle per second at full capacity.",
     definition:
-      "The number of requests a system can process per unit of time — its sustained capacity under load.",
+      "The number of requests a system can process per unit of time: its sustained capacity under load.",
     relevance:
       "Determines how many users you can serve simultaneously. Scale throughput by adding capacity at your bottleneck.",
     category: "concept",
@@ -283,11 +283,11 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "p95 Latency",
     eli5: "The slowest response time that 95% of your users experience.",
     definition:
-      "The latency at the 95th percentile — 95% of requests are faster than this value. It captures the experience of your slowest typical users.",
+      "The latency at the 95th percentile: 95% of requests are faster than this value. It captures the experience of your slowest typical users.",
     relevance:
       "More meaningful than average latency. A low average can hide a terrible experience for 1 in 20 users.",
     analogy:
-      "Like saying \"95% of pizza deliveries arrive within 30 minutes\" — the p95 is 30 minutes.",
+      "Like saying \"95% of pizza deliveries arrive within 30 minutes\": the p95 is 30 minutes.",
     category: "concept",
     whenToUse: [
       "Setting SLOs that represent the typical user experience",
@@ -297,9 +297,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "p99": {
     term: "p99",
-    eli5: "Only 1% of requests are slower than this — your worst typical performance.",
+    eli5: "Only 1% of requests are slower than this: your worst typical performance.",
     definition:
-      "The 99th percentile latency — only 1% of requests are slower than this value.",
+      "The 99th percentile latency: only 1% of requests are slower than this value.",
     relevance:
       "Used for strict SLAs. Improving p99 often requires eliminating tail-latency outliers like garbage collection pauses or cold cache misses.",
     category: "concept",
@@ -313,11 +313,11 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Bottleneck",
     eli5: "The one slow part of your system that makes everything else wait.",
     definition:
-      "The single component in a system that limits overall throughput — the constraint everything else is waiting on.",
+      "The single component in a system that limits overall throughput: the constraint everything else is waiting on.",
     relevance:
       "Optimising anything other than the bottleneck is wasted effort. Find it first, fix it, then find the next one.",
     analogy:
-      "The narrowest point in a funnel — widening anywhere else doesn't help water flow faster.",
+      "The narrowest point in a funnel: widening anywhere else doesn't help water flow faster.",
     category: "concept",
     whenToUse: [
       "Before adding capacity anywhere, find this constraint first",
@@ -331,7 +331,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     definition:
       "The maximum number of concurrent requests a component can handle before it starts dropping new arrivals.",
     relevance:
-      "Every node has a capacity ceiling. When in-flight requests hit that ceiling, the system starts failing — that's when you need to scale.",
+      "Every node has a capacity ceiling. When in-flight requests hit that ceiling, the system starts failing: that's when you need to scale.",
     category: "concept",
     whenToUse: [
       "Planning headroom before expected scaling events",
@@ -341,7 +341,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "cache hit": {
     term: "Cache Hit",
-    eli5: "You asked the cache and it had the answer — fast, cheap, and instant.",
+    eli5: "You asked the cache and it had the answer: fast, cheap, and instant.",
     definition:
       "When the requested data is found in the cache and returned immediately without querying the backend.",
     relevance:
@@ -398,7 +398,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "ttl": {
     term: "TTL (Time to Live)",
-    eli5: "An expiry timer on cached data — after this many seconds, throw it out and refetch.",
+    eli5: "An expiry timer on cached data: after this many seconds, throw it out and refetch.",
     definition:
       "How long a cached value is considered fresh before it expires and the next request triggers a refetch.",
     relevance:
@@ -418,7 +418,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     relevance:
       "The primary tool for smoothing traffic spikes. Producers don't wait; consumers process at their own pace.",
     analogy:
-      "Like a line at a coffee shop — customers arrive in bursts, but the barista serves them one at a time at a steady pace.",
+      "Like a line at a coffee shop: customers arrive in bursts, but the barista serves them one at a time at a steady pace.",
     category: "component",
     whenToUse: [
       "Traffic spikes need absorbing without dropping requests",
@@ -444,13 +444,13 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "token bucket": {
     term: "Token Bucket",
-    eli5: "Tokens refill at a fixed rate; each request spends one — run out and get rejected.",
+    eli5: "Tokens refill at a fixed rate; each request spends one: run out and get rejected.",
     definition:
       "A rate-limiting algorithm where tokens refill at a fixed rate and each request consumes one. Empty bucket = request rejected.",
     relevance:
       "The most common rate-limiting implementation. The refill rate sets your sustained limit; the bucket size sets your burst tolerance.",
     analogy:
-      "Like a parking meter that adds time at a fixed rate — if you've used it all up, you can't park until more accrues.",
+      "Like a parking meter that adds time at a fixed rate: if you've used it all up, you can't park until more accrues.",
     category: "concept",
     whenToUse: [
       "Implementing rate limiting with burst tolerance",
@@ -480,7 +480,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     relevance:
       "Protects the rest of your system when one dependency is down. Callers get fast errors instead of waiting for timeouts.",
     analogy:
-      "Like an electrical circuit breaker — it cuts power to prevent a short circuit from starting a fire.",
+      "Like an electrical circuit breaker: it cuts power to prevent a short circuit from starting a fire.",
     category: "component",
     whenToUse: [
       "Calling an external or unreliable dependency",
@@ -492,7 +492,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "cascading failure": {
     term: "Cascading Failure",
-    eli5: "One failing service causes its callers to fail, which causes their callers to fail — dominos.",
+    eli5: "One failing service causes its callers to fail, which causes their callers to fail: dominos.",
     definition:
       "When one failing component causes its callers to back up and fail, which causes their callers to fail, propagating outages through the entire system.",
     relevance:
@@ -541,9 +541,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     definition:
       "Upgrading a single machine with more CPU, memory, or storage to handle increased load.",
     relevance:
-      "Simple but limited — there's a maximum machine size, it's expensive, and it creates a single point of failure.",
+      "Simple but limited: there's a maximum machine size, it's expensive, and it creates a single point of failure.",
     analogy:
-      "Buying a bigger truck instead of adding more trucks to your fleet.",
+      "Upgrading to a single bigger server instead of adding more servers.",
     category: "concept",
     whenToUse: [
       "Your workload cannot easily be distributed across multiple machines",
@@ -555,7 +555,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Single Point of Failure",
     eli5: "One component whose failure brings the entire system to its knees.",
     definition:
-      "Any component whose failure brings down the entire system — a non-redundant link in the chain.",
+      "Any component whose failure brings down the entire system: a non-redundant link in the chain.",
     relevance:
       "Identifying and eliminating single points of failure is one of the first steps in making a system reliable.",
     category: "concept",
@@ -612,7 +612,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "In-Flight",
     eli5: "Requests that have been sent but are still waiting for a reply.",
     definition:
-      "Requests that have been sent but haven't received a response yet — they're consuming resources on the server while waiting to complete.",
+      "Requests that have been sent but haven't received a response yet: they're consuming resources on the server while waiting to complete.",
     relevance:
       "The number of in-flight requests determines whether you're within a component's capacity or about to hit overload.",
     category: "concept",
@@ -654,7 +654,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Fan-Out",
     eli5: "One event triggers writes or notifications to many different services at once.",
     definition:
-      "When a single request triggers multiple downstream requests — one input becomes many outputs.",
+      "When a single request triggers multiple downstream requests: one input becomes many outputs.",
     relevance:
       "Common in notification systems and aggregation. Each level of fan-out multiplies load, so deep fan-out can be surprisingly expensive.",
     category: "pattern",
@@ -671,7 +671,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     definition:
       "A fast, temporary storage layer that keeps copies of frequently accessed data so future requests can be served without hitting the slower backend.",
     relevance:
-      "Dramatically reduces latency and backend load for read-heavy workloads. The trade-off is managing staleness — cached data may be out of date.",
+      "Dramatically reduces latency and backend load for read-heavy workloads. The trade-off is managing staleness: cached data may be out of date.",
     analogy:
       "Like keeping your most-used tools on your desk instead of walking to the supply closet every time.",
     category: "component",
@@ -685,9 +685,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "durability": {
     term: "Durability",
-    eli5: "Once data is saved, it stays saved — even if the server crashes a second later.",
+    eli5: "Once data is saved, it stays saved: even if the server crashes a second later.",
     definition:
-      "The guarantee that once data is written and acknowledged, it won't be lost — even if the server crashes immediately after.",
+      "The guarantee that once data is written and acknowledged, it won't be lost: even if the server crashes immediately after.",
     relevance:
       "Databases achieve durability through write-ahead logs and disk flushes. Sacrificing durability (e.g., async writes) trades safety for speed.",
     category: "concept",
@@ -699,7 +699,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "acknowledge": {
     term: "Acknowledge (ACK)",
-    eli5: "A reply that says 'I got your message' — the signal that work was accepted.",
+    eli5: "A reply that says 'I got your message': the signal that work was accepted.",
     definition:
       "A confirmation message sent back to the sender indicating that a request or message was received and accepted for processing.",
     relevance:
@@ -717,7 +717,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     definition:
       "A component that generates messages or work items and sends them into a queue or message broker for later processing.",
     relevance:
-      "In async architectures, producers fire and forget — they don't wait for the work to actually complete, only for the queue to accept it.",
+      "In async architectures, producers fire and forget: they don't wait for the work to actually complete, only for the queue to accept it.",
     category: "concept",
     whenToUse: [
       "Building async workflows where work generation is separate from processing",
@@ -729,7 +729,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Consumer",
     eli5: "The worker that pulls tasks from a queue and actually processes them.",
     definition:
-      "A component that pulls messages from a queue and processes them — the worker that actually does the job the producer requested.",
+      "A component that pulls messages from a queue and processes them: the worker that actually does the job the producer requested.",
     relevance:
       "Consumers set the actual processing rate. If consumers are slower than producers, queues grow. Scale consumers to match sustained production rate.",
     category: "concept",
@@ -755,7 +755,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "write-through": {
     term: "Write-Through",
-    eli5: "Write to both cache and database at the same time — both always agree.",
+    eli5: "Write to both cache and database at the same time: both always agree.",
     definition:
       "A caching strategy where every write updates both the cache and the database simultaneously before acknowledging success.",
     relevance:
@@ -785,7 +785,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "write-around": {
     term: "Write-Around",
-    eli5: "Skip the cache on writes — go straight to the database, let reads fill the cache.",
+    eli5: "Skip the cache on writes: go straight to the database, let reads fill the cache.",
     definition:
       "A caching strategy where writes go directly to the database, bypassing the cache entirely. The cache fills on subsequent reads.",
     relevance:
@@ -813,11 +813,11 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "retry": {
     term: "Retry",
-    eli5: "Try again if the first attempt fails — transient issues often resolve themselves.",
+    eli5: "Try again if the first attempt fails: transient issues often resolve themselves.",
     definition:
       "Automatically re-attempting a failed operation, usually with a delay between attempts, hoping the transient issue has resolved.",
     relevance:
-      "Essential for handling temporary failures (network blips, brief overloads). Must be combined with idempotency to be safe — otherwise retries can cause duplicate effects.",
+      "Essential for handling temporary failures (network blips, brief overloads). Must be combined with idempotency to be safe: otherwise retries can cause duplicate effects.",
     category: "concept",
     whenToUse: [
       "Network calls that fail transiently and are idempotent",
@@ -827,11 +827,11 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "exponential backoff": {
     term: "Exponential Backoff",
-    eli5: "Wait longer after each failed retry — 1 s, then 2 s, then 4 s, then 8 s.",
+    eli5: "Wait longer after each failed retry: 1 s, then 2 s, then 4 s, then 8 s.",
     definition:
       "A retry strategy where the wait between attempts doubles each time (e.g., 1s, 2s, 4s, 8s), reducing pressure on an already-struggling system.",
     relevance:
-      "Prevents retry storms — if many clients retry immediately and simultaneously, they can overwhelm a recovering system all over again.",
+      "Prevents retry storms: if many clients retry immediately and simultaneously, they can overwhelm a recovering system all over again.",
     category: "pattern",
     whenToUse: [
       "Retrying requests to a system that is struggling under load",
@@ -855,9 +855,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "partition": {
     term: "Partition",
-    eli5: "A segment of data or infrastructure separated from others — by design or failure.",
+    eli5: "A segment of data or infrastructure separated from others: by design or failure.",
     definition:
-      "A subset of data or infrastructure separated from others — either intentionally (sharding) or by failure (network partition).",
+      "A subset of data or infrastructure separated from others: either intentionally (sharding) or by failure (network partition).",
     relevance:
       "In distributed systems, network partitions are inevitable. The CAP theorem says you must choose between consistency and availability when one occurs.",
     category: "concept",
@@ -885,7 +885,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Availability",
     eli5: "What percentage of time your system is up and serving requests correctly.",
     definition:
-      "The percentage of time a system is operational and responding to requests — often expressed as \"nines\" (99.9% = three nines).",
+      "The percentage of time a system is operational and responding to requests: often expressed as \"nines\" (99.9% = three nines).",
     relevance:
       "Every nine you add requires exponentially more engineering effort. Going from 99.9% to 99.99% means cutting downtime from ~8 hours/year to ~52 minutes/year.",
     category: "concept",
@@ -939,7 +939,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "choreography": {
     term: "Choreography",
-    eli5: "Services react to events on their own — no conductor, just musicians watching each other.",
+    eli5: "Services react to events on their own: no conductor, just musicians watching each other.",
     definition:
       "A decentralized approach where each service reacts to events independently, with no central coordinator directing the workflow.",
     relevance:
@@ -953,9 +953,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "eventual durability": {
     term: "Eventual Durability",
-    eli5: "Your write is acknowledged before it hits disk — it will be saved soon, just not yet.",
+    eli5: "Your write is acknowledged before it hits disk: it will be saved soon, just not yet.",
     definition:
-      "A model where writes are acknowledged before being persisted to durable storage — they'll be saved eventually, but not instantly.",
+      "A model where writes are acknowledged before being persisted to durable storage: they'll be saved eventually, but not instantly.",
     relevance:
       "Used in async write patterns. The trade-off is clear: faster acknowledgement for the caller, but a window where data could be lost if the system crashes.",
     category: "concept",
@@ -969,11 +969,11 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Decoupling",
     eli5: "Components that don't depend on each other's availability to do their jobs.",
     definition:
-      "Designing components so they don't depend directly on each other's availability or timing — they communicate through intermediaries like queues or events.",
+      "Designing components so they don't depend directly on each other's availability or timing: they communicate through intermediaries like queues or events.",
     relevance:
       "Decoupled systems are more resilient: if one component is slow or down, the others keep working. The trade-off is added complexity and eventual consistency.",
     analogy:
-      "Like email vs phone calls — with email, both parties don't need to be available at the same time.",
+      "Like email vs phone calls: with email, both parties don't need to be available at the same time.",
     category: "concept",
     whenToUse: [
       "You want one service to continue when another is slow or down",
@@ -1013,7 +1013,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Cold Start",
     eli5: "The slow startup when a service or cache has no warm state yet.",
     definition:
-      "The initial delay when a service or cache is empty and must build up its state from scratch — no cached data, no warm connections.",
+      "The initial delay when a service or cache is empty and must build up its state from scratch: no cached data, no warm connections.",
     relevance:
       "Causes latency spikes after deployments or scaling events. Pre-warming caches and connection pools mitigates the impact.",
     category: "concept",
@@ -1053,9 +1053,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "monolith": {
     term: "Monolith",
-    eli5: "One big application that does everything — one codebase, one deploy.",
+    eli5: "One big application that does everything: one codebase, one deploy.",
     definition:
-      "A single deployable unit containing all of an application's functionality — one codebase, one process, one deploy.",
+      "A single deployable unit containing all of an application's functionality: one codebase, one process, one deploy.",
     relevance:
       "Simpler to develop and debug initially, but becomes harder to scale and deploy independently as the team and system grow.",
     category: "concept",
@@ -1067,9 +1067,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "read-heavy": {
     term: "Read-Heavy",
-    eli5: "Your system handles way more reads than writes — think 99% read, 1% write.",
+    eli5: "Your system handles way more reads than writes: think 99% read, 1% write.",
     definition:
-      "A workload where reads vastly outnumber writes — typically 90%+ of traffic is reading data rather than creating or updating it.",
+      "A workload where reads vastly outnumber writes: typically 90%+ of traffic is reading data rather than creating or updating it.",
     relevance:
       "Read-heavy workloads benefit enormously from caching and read replicas. Most web traffic (product pages, feeds, search) is read-heavy.",
     category: "concept",
@@ -1081,9 +1081,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "write-heavy": {
     term: "Write-Heavy",
-    eli5: "Your system writes data constantly — think logging, metrics, or IoT sensor streams.",
+    eli5: "Your system writes data constantly: think logging, metrics, or IoT sensor streams.",
     definition:
-      "A workload where writes dominate — logging, analytics ingestion, IoT sensor data, or high-frequency transactions.",
+      "A workload where writes dominate: logging, analytics ingestion, IoT sensor data, or high-frequency transactions.",
     relevance:
       "Write-heavy workloads need queues for burst absorption and sharding for throughput. Caching helps less since data changes constantly.",
     category: "concept",
@@ -1095,9 +1095,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "fire-and-forget": {
     term: "Fire-and-Forget",
-    eli5: "Send a message and don't wait — assume it will be processed eventually.",
+    eli5: "Send a message and don't wait: assume it will be processed eventually.",
     definition:
-      "Sending a message or request without waiting for confirmation that it was processed — just trusting it will eventually be handled.",
+      "Sending a message or request without waiting for confirmation that it was processed: just trusting it will eventually be handled.",
     relevance:
       "Maximizes speed for the sender but sacrifices delivery guarantees. Appropriate for analytics events, logs, and non-critical notifications.",
     category: "pattern",
@@ -1125,7 +1125,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Health Check",
     eli5: "An endpoint that tells load balancers whether a server is ready to take traffic.",
     definition:
-      "An endpoint that reports whether a service is alive and ready to handle traffic — used by load balancers and orchestrators to route requests away from unhealthy instances.",
+      "An endpoint that reports whether a service is alive and ready to handle traffic: used by load balancers and orchestrators to route requests away from unhealthy instances.",
     relevance:
       "Without health checks, load balancers send traffic to dead instances. Health checks enable automatic recovery by routing around failures.",
     category: "concept",
@@ -1155,7 +1155,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     definition:
       "A distributed event-streaming platform that stores ordered, durable logs of messages. Consumers read at their own pace without removing messages from the log.",
     relevance:
-      "Used when you need high-throughput, durable message delivery with replay capability — event sourcing, analytics pipelines, and cross-service communication at scale.",
+      "Used when you need high-throughput, durable message delivery with replay capability: event sourcing, analytics pipelines, and cross-service communication at scale.",
     analogy:
       "Like a newspaper archive: everyone can read back through old editions at their own pace, and nothing gets thrown away.",
     category: "component",
@@ -1168,7 +1168,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "sqs": {
     term: "SQS (Simple Queue Service)",
-    eli5: "Amazon's managed queue service — produce messages, let workers pull and process them.",
+    eli5: "Amazon's managed queue service: produce messages, let workers pull and process them.",
     definition:
       "Amazon's managed message queue that delivers messages at-least-once to consumers, handling infrastructure, scaling, and durability automatically.",
     relevance:
@@ -1198,7 +1198,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Message Broker",
     eli5: "Middleware that routes messages between services so they don't talk directly.",
     definition:
-      "Infrastructure that routes messages between producers and consumers — handling delivery, ordering, and persistence so applications don't have to.",
+      "Infrastructure that routes messages between producers and consumers: handling delivery, ordering, and persistence so applications don't have to.",
     relevance:
       "The backbone of event-driven architectures. Examples include Kafka, RabbitMQ, and SQS. Choosing the right broker depends on your ordering and durability needs.",
     category: "component",
@@ -1210,9 +1210,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "at-least-once delivery": {
     term: "At-Least-Once Delivery",
-    eli5: "Every message arrives at least once — but sometimes twice, so handle that.",
+    eli5: "Every message arrives at least once, but sometimes twice, so handle that.",
     definition:
-      "A messaging guarantee where every message is delivered to the consumer at least one time — possibly more in edge cases (retries, network issues).",
+      "A messaging guarantee where every message is delivered to the consumer at least one time: possibly more in edge cases (retries, network issues).",
     relevance:
       "The most common delivery mode. Requires your consumers to be idempotent, since they may process the same message twice.",
     category: "concept",
@@ -1224,9 +1224,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "exactly-once delivery": {
     term: "Exactly-Once Delivery",
-    eli5: "Every message arrives exactly one time — no duplicates, no losses.",
+    eli5: "Every message arrives exactly one time: no duplicates, no losses.",
     definition:
-      "A messaging guarantee where every message is processed exactly one time — no duplicates, no losses. Extremely hard to achieve in distributed systems.",
+      "A messaging guarantee where every message is processed exactly one time: no duplicates, no losses. Extremely hard to achieve in distributed systems.",
     relevance:
       "Often approximated rather than truly achieved. Systems that claim exactly-once usually combine at-least-once delivery with idempotent processing.",
     category: "concept",
@@ -1256,7 +1256,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     definition:
       "A messaging pattern where publishers emit events without knowing who receives them, and subscribers listen for events they care about without knowing who sent them.",
     relevance:
-      "Enables loose coupling between services. Adding a new subscriber doesn't require changing the publisher — they're completely independent.",
+      "Enables loose coupling between services. Adding a new subscriber doesn't require changing the publisher: they're completely independent.",
     category: "pattern",
     whenToUse: [
       "Services need to react to events without being directly called",
@@ -1268,7 +1268,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Durable Queue",
     eli5: "A queue that writes messages to disk so they survive crashes and restarts.",
     definition:
-      "A queue that persists messages to disk so they survive crashes and restarts — messages are not lost even if the broker goes down.",
+      "A queue that persists messages to disk so they survive crashes and restarts: messages are not lost even if the broker goes down.",
     relevance:
       "Critical for production systems where message loss is unacceptable. Kafka and SQS provide durability by default; in-memory queues do not.",
     category: "component",
@@ -1308,7 +1308,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "dns": {
     term: "DNS (Domain Name System)",
-    eli5: "The internet's phone book — turns 'api.myapp.com' into an IP address.",
+    eli5: "The internet's phone book: turns 'api.myapp.com' into an IP address.",
     definition:
       "The system that translates human-readable domain names (like google.com) into IP addresses that machines can route to.",
     relevance:
@@ -1324,7 +1324,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Round Trip",
     eli5: "The time for a message to travel to a server and for the reply to come back.",
     definition:
-      "A complete request-response cycle between two endpoints — the time for a message to travel to the destination and for a reply to come back.",
+      "A complete request-response cycle between two endpoints: the time for a message to travel to the destination and for a reply to come back.",
     relevance:
       "Each round trip adds latency. Reducing the number of round trips (batching, caching, persistent connections) is a key performance optimization.",
     category: "concept",
@@ -1336,7 +1336,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "garbage collection": {
     term: "Garbage Collection (GC)",
-    eli5: "Automatic cleanup of unused memory — but it can pause your app while running.",
+    eli5: "Automatic cleanup of unused memory, but it can pause your app while running.",
     definition:
       "An automatic memory management process that identifies and frees unused memory. When it runs, it can briefly pause the application.",
     relevance:
@@ -1364,9 +1364,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   "service mesh": {
     term: "Service Mesh",
-    eli5: "A sidecar layer that handles networking between services — routing, retries, and TLS.",
+    eli5: "A sidecar layer that handles networking between services: routing, retries, and TLS.",
     definition:
-      "An infrastructure layer that handles service-to-service communication — routing, load balancing, encryption, and observability — without changing application code.",
+      "An infrastructure layer that handles service-to-service communication (routing, load balancing, encryption, and observability) without changing application code.",
     relevance:
       "Offloads networking concerns to sidecar proxies so developers focus on business logic. Adds operational complexity but provides consistent cross-cutting behaviour.",
     category: "component",
@@ -1380,7 +1380,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     term: "Observability",
     eli5: "Being able to look inside your running system and understand what is happening.",
     definition:
-      "The ability to understand a system's internal state from its external outputs — logs, metrics, and traces collected from running services.",
+      "The ability to understand a system's internal state from its external outputs: logs, metrics, and traces collected from running services.",
     relevance:
       "You can't fix what you can't see. Observability tells you what's broken, where, and why. Without it, debugging distributed systems is guesswork.",
     category: "concept",
@@ -1396,7 +1396,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     definition:
       "A release strategy with two identical environments (blue and green). New code deploys to the idle one, then traffic switches over instantly.",
     relevance:
-      "Enables zero-downtime deployments with instant rollback — if the new version has issues, switch traffic back to the old environment immediately.",
+      "Enables zero-downtime deployments with instant rollback: if the new version has issues, switch traffic back to the old environment immediately.",
     category: "pattern",
     whenToUse: [
       "You need zero-downtime deployments with an instant rollback option",
