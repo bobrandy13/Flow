@@ -7,9 +7,17 @@ import { simulationResultSchema, type SimulationResult } from "@flow/shared/sche
 
 const LOCAL_API_BASE = "http://localhost:4000";
 
-export function getSimulationApiBase(env = process.env): string {
-  if (env.NODE_ENV === "development") return LOCAL_API_BASE;
-  return env.NEXT_PUBLIC_API_BASE_URL || LOCAL_API_BASE;
+/**
+ * Return the simulation API base URL.
+ *
+ * ⚠️  `process.env.NEXT_PUBLIC_*` must appear as a **literal** expression —
+ * Next.js replaces it via static text substitution at build time.  Aliasing
+ * `process.env` to a variable (e.g. a function parameter) breaks the
+ * replacement and the value will be `undefined` in the browser bundle.
+ */
+export function getSimulationApiBase(): string {
+  if (process.env.NODE_ENV === "development") return LOCAL_API_BASE;
+  return process.env.NEXT_PUBLIC_API_BASE_URL || LOCAL_API_BASE;
 }
 
 const API_BASE = getSimulationApiBase();
