@@ -156,6 +156,10 @@ jobs:
           fi
           CORS="https://learnsystemdesign.net,${WEB_URL}"
           echo "Setting CORS_ORIGINS to: $CORS"
+          # `^@^` overrides the default `,` separator between KEY=VALUE pairs so
+          # the comma inside CORS_ORIGINS is treated as part of the value, not as
+          # the start of a second env var. Do not remove without using --set-env-vars
+          # with a file or another escape mechanism.
           gcloud run services update ${{ env.API_SERVICE }} \
             --region=${{ env.GCP_REGION }} \
-            --update-env-vars="CORS_ORIGINS=$CORS"
+            --update-env-vars="^@^CORS_ORIGINS=$CORS"
