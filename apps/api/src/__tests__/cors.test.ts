@@ -68,11 +68,13 @@ describe("CORS", () => {
 describe("CORS in production", () => {
   let app: FastifyInstance;
 
+  const CLOUD_RUN_URL = "https://flow-web-abc123-as.a.run.app";
+
   beforeAll(async () => {
     app = await buildApp({
       disableRateLimit: true,
       allowLocalhost: false,
-      corsOrigins: ["https://learnsystemdesign.net"],
+      corsOrigins: ["https://learnsystemdesign.net", CLOUD_RUN_URL],
     });
     await app.ready();
   });
@@ -100,8 +102,10 @@ describe("CORS in production", () => {
     expect(res.headers["access-control-allow-origin"]).toBeUndefined();
   });
 
-  it("still allows the explicit production origin", async () => {
-    const origin = "https://learnsystemdesign.net";
+  it.each([
+    "https://learnsystemdesign.net",
+    CLOUD_RUN_URL,
+  ])("allows production origin %s", async (origin) => {
     const res = await app.inject({
       method: "OPTIONS",
       url: "/api/simulate",

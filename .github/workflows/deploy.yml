@@ -154,7 +154,8 @@ jobs:
             WEB_URL=$(gcloud run services describe ${{ env.WEB_SERVICE }} \
               --region=${{ env.GCP_REGION }} --format='value(status.url)')
           fi
-          echo "Setting CORS_ORIGINS to: $WEB_URL"
+          CORS="https://learnsystemdesign.net,${WEB_URL}"
+          echo "Setting CORS_ORIGINS to: $CORS"
           gcloud run services update ${{ env.API_SERVICE }} \
             --region=${{ env.GCP_REGION }} \
-            --update-env-vars="CORS_ORIGINS=$WEB_URL"
+            --update-env-vars="CORS_ORIGINS=$CORS"
