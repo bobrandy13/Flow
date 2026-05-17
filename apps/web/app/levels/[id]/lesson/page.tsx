@@ -42,7 +42,7 @@ export default function LessonPage() {
 
   return (
     <div style={pageStyle}>
-      <div style={containerStyle}>
+      <div className="flow-content-zone" style={containerStyle}>
         <nav style={{ marginBottom: 24 }}>
           <Link href="/levels" style={breadcrumbLink}>
             ← Back to All Levels
@@ -199,7 +199,9 @@ const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
   color: color.text,
   padding: "32px 24px 80px",
-  background: `linear-gradient(180deg, rgba(14,26,43,0.97) 0%, rgba(14,26,43,0.99) 100%)`,
+  // No background override — let the body blueprint grid show through.
+  // The flow-content-zone class (applied to the container) adds a subtle
+  // center-strip dim so text stays readable over the grid.
 };
 
 const containerStyle: React.CSSProperties = {

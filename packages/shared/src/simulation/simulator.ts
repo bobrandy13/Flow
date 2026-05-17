@@ -10,6 +10,7 @@ import type {
 import type { SLA, Workload } from "../types/level";
 import { COMPONENT_SPECS, DEFAULT_FAN_OUT } from "../engine/component-specs";
 import { CROSS_REGION_TICKS } from "../engine/regions";
+import { diagnose, diagnoseEmpty } from "../engine/diagnose";
 
 /** Deterministic mulberry32 RNG. */
 function mulberry32(seed: number) {
@@ -213,6 +214,7 @@ export function* simulateStream(
   // Without this drain phase, the tail of requests injected in the last few
   // ticks would be force-dropped and wreck the success rate.
   const maxTicks = workload.ticks * 4 + 200;
+  let lastFrame: TickFrame | null = null;
   for (let tick = 0; tick < maxTicks; tick++) {
     const injecting = tick < workload.ticks;
     if (!injecting && inFlight.length === 0 && !hasPendingWork(runtimes)) break;
@@ -452,13 +454,15 @@ export function* simulateStream(
     }
 
     // 3. Yield a frame for this tick.
-    yield {
+    const frame: TickFrame = {
       tick,
       phase: injecting ? "steady" : "drain",
       perNode: snapshotRuntimes(runtimes),
       transitions: transitionsThisTick,
       metricsSoFar: computeMetrics(completed, runtimes),
     };
+    lastFrame = frame;
+    yield frame;
   }
 
   // Anything still in flight after the safety cap is a real failure (loop,
@@ -469,14 +473,28 @@ export function* simulateStream(
 
   const metrics = computeMetrics(completed, runtimes);
   const passed = metrics.successRate >= sla.minSuccessRate && metrics.p95Latency <= sla.maxP95Latency;
+  // Refresh the per-node snapshot so diagnose() sees the post-drain state.
+  const finalFrame: TickFrame = lastFrame
+    ? { ...lastFrame, perNode: snapshotRuntimes(runtimes), metricsSoFar: metrics }
+    : {
+        tick: 0,
+        phase: "drain",
+        perNode: snapshotRuntimes(runtimes),
+        transitions: [],
+        metricsSoFar: metrics,
+      };
+  const diagnosis = diagnose({
+    diagram,
+    workload,
+    sla,
+    finalFrame,
+    outcome: { passed, metrics },
+  });
   return {
     passed,
     metrics,
-    failureReason: passed
-      ? undefined
-      : metrics.successRate < sla.minSuccessRate
-        ? `Success rate ${(metrics.successRate * 100).toFixed(1)}% < required ${(sla.minSuccessRate * 100).toFixed(0)}%.`
-        : `p95 latency ${metrics.p95Latency.toFixed(1)} > allowed ${sla.maxP95Latency}.`,
+    failureReason: passed ? undefined : diagnosis.headline,
+    diagnosis,
   };
 
   // ----- helpers (closures over local state) -----
@@ -633,6 +651,7 @@ function failed(reason: string): SimulationOutcome {
     passed: false,
     metrics: { avgLatency: 0, p95Latency: 0, successRate: 0, drops: 0 },
     failureReason: reason,
+    diagnosis: diagnoseEmpty(reason),
   };
 }
 

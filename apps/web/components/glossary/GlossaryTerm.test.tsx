@@ -1,8 +1,20 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { GlossaryTerm } from "./GlossaryTerm";
 import type { GlossaryEntry } from "@/lib/glossary/terms";
+
+const mockOpen = vi.fn();
+
+vi.mock("@/lib/glossary/usePanelStore", () => ({
+  useGlossaryPanel: () => ({
+    open: mockOpen,
+    close: vi.fn(),
+    toggle: vi.fn(),
+    isOpen: false,
+    activeTerm: null,
+  }),
+}));
 
 const mockEntry: GlossaryEntry = {
   term: "Load Balancer",
@@ -15,6 +27,10 @@ const mockEntry: GlossaryEntry = {
 };
 
 describe("GlossaryTerm", () => {
+  beforeEach(() => {
+    mockOpen.mockClear();
+  });
+
   it("renders the matched text", () => {
     render(<GlossaryTerm entry={mockEntry} matchedText="load balancer" />);
     expect(screen.getByText("load balancer")).toBeInTheDocument();
@@ -62,5 +78,12 @@ describe("GlossaryTerm", () => {
     fireEvent.mouseEnter(screen.getByText("throughput"));
     expect(screen.getByText("Requests per second.")).toBeInTheDocument();
     expect(screen.queryByText("💡")).toBeNull();
+  });
+
+  it("calls open with the lowercase term key on click", () => {
+    render(<GlossaryTerm entry={mockEntry} matchedText="load balancer" />);
+    fireEvent.click(screen.getByText("load balancer"));
+    expect(mockOpen).toHaveBeenCalledOnce();
+    expect(mockOpen).toHaveBeenCalledWith("load balancer");
   });
 });

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import type { GlossaryEntry } from "@/lib/glossary/terms";
 import { color, fontFamily } from "@/lib/ui/theme";
+import { useGlossaryPanel } from "@/lib/glossary/usePanelStore";
 
 interface Props {
   entry: GlossaryEntry;
@@ -14,6 +15,7 @@ export function GlossaryTerm({ entry, matchedText }: Props) {
   const [position, setPosition] = useState<"above" | "below">("above");
   const spanRef = useRef<HTMLSpanElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const { open } = useGlossaryPanel();
 
   const show = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -36,11 +38,12 @@ export function GlossaryTerm({ entry, matchedText }: Props) {
     <span
       ref={spanRef}
       className="glossary-term"
+      style={termStyle}
       onMouseEnter={show}
       onMouseLeave={hide}
       onFocus={show}
       onBlur={hide}
-      onClick={show}
+      onClick={() => open(entry.term.toLowerCase())}
       tabIndex={0}
       role="button"
       aria-label={`Definition of ${entry.term}`}
@@ -72,6 +75,13 @@ export function GlossaryTerm({ entry, matchedText }: Props) {
 }
 
 /* ── Styles ── */
+
+const termStyle: React.CSSProperties = {
+  cursor: "pointer",
+  textDecoration: "underline dotted",
+  textDecorationColor: "rgba(245, 239, 214, 0.4)",
+  position: "relative",
+};
 
 const tooltipStyle: React.CSSProperties = {
   position: "absolute",

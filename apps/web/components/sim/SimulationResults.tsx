@@ -1,6 +1,6 @@
 "use client";
 
-import type { TickFrame, ValidationReport } from "@flow/shared/types/validation";
+import type { Diagnosis, RuleResult, TickFrame, ValidationReport } from "@flow/shared/types/validation";
 import { ticksToMs, formatSuccessRate, METRIC_EXPLAINERS } from "@flow/shared/engine/units";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { fontFamily, color } from "@/lib/ui/theme";
@@ -107,11 +107,11 @@ export function SimulationResults({ report, nodeLabels, liveFrame, totalTicks }:
       {report?.simulation && (
         <>
           <div style={{ fontFamily: fontFamily.display, fontSize: 13, fontWeight: 700, margin: "14px 0 8px", letterSpacing: 1.5, textTransform: "uppercase", color: color.accent, paddingBottom: 4, borderBottom: `1px dashed ${color.border}` }}>▸ SIMULATION</div>
-          <PassFailStamp passed={report.simulation.passed} />
-          {report.simulation.failureReason && (
-            <div style={{ fontSize: 12, color: "#ff5c5c", margin: "4px 0" }}>
-              {report.simulation.failureReason}
-            </div>
+          <PassFailStamp passed={report.structuralPassed && report.simulation.passed} />
+          {!report.structuralPassed ? (
+            <StructuralVerdict ruleResults={report.ruleResults} simPassed={report.simulation.passed} />
+          ) : (
+            <MentorVerdict diagnosis={report.simulation.diagnosis} nodeLabels={nodeLabels} />
           )}
           <Metric
             k="Avg latency"
@@ -211,3 +211,154 @@ const panelStyle: React.CSSProperties = {
   borderTop: "1px solid #22405f",
   minWidth: 240,
 };
+
+/**
+ * Verdict shown when the diagram fails structural rules. Even if the
+ * simulator happens to meet SLA (e.g. a 2-node toy that ignores the
+ * "needs a database" rule), the level is *not* complete — surface the
+ * missing-pieces explanation here instead of the SLA mentor verdict.
+ */
+function StructuralVerdict({
+  ruleResults,
+  simPassed,
+}: {
+  ruleResults: RuleResult[];
+  simPassed: boolean;
+}) {
+  const failed = ruleResults.filter((r) => !r.passed);
+  if (failed.length === 0) return null;
+  const tone = { bar: "#f87171", bg: "rgba(248,113,113,0.08)" };
+  return (
+    <div
+      data-testid="structural-verdict"
+      style={{
+        marginTop: 8,
+        padding: "10px 12px",
+        borderLeft: `3px solid ${tone.bar}`,
+        background: tone.bg,
+        borderRadius: 4,
+      }}
+    >
+      <div style={{ fontFamily: fontFamily.display, fontSize: 13, fontWeight: 700, color: tone.bar, marginBottom: 6 }}>
+        Your design is missing required pieces
+      </div>
+      <div style={{ fontSize: 12, lineHeight: 1.5, opacity: 0.9, marginBottom: 8 }}>
+        {simPassed
+          ? "The simulation happened to meet the SLA, but the level brief requires components or connections that aren't in your diagram yet. Fix these and re-run."
+          : "Before tuning the simulation, the level brief requires components or connections that aren't in your diagram yet."}
+      </div>
+      <div style={{ fontSize: 10, letterSpacing: 1, textTransform: "uppercase", opacity: 0.55, marginBottom: 3 }}>
+        Missing
+      </div>
+      <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, lineHeight: 1.5 }}>
+        {failed.map((r, i) => (
+          <li key={i}>{r.message}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Mentor verdict panel: turns the structured Diagnosis from the engine into
+ * a readable explanation with evidence and next-step suggestions. Coloured
+ * tone reflects the category — red on fail, amber on a thin-margin pass,
+ * soft blue on a clean pass.
+ */
+function MentorVerdict({
+  diagnosis,
+  nodeLabels,
+}: {
+  diagnosis: Diagnosis | undefined;
+  nodeLabels?: Record<string, string>;
+}) {
+  if (!diagnosis) return null;
+  const tone = toneFor(diagnosis.category);
+  const culpritLabels = diagnosis.culpritNodeIds
+    .map((id) => nodeLabels?.[id] ?? id)
+    .filter(Boolean);
+  return (
+    <div
+      data-testid="mentor-verdict"
+      style={{
+        marginTop: 8,
+        padding: "10px 12px",
+        borderLeft: `3px solid ${tone.bar}`,
+        background: tone.bg,
+        borderRadius: 4,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: fontFamily.display,
+          fontSize: 13,
+          fontWeight: 700,
+          color: tone.bar,
+          marginBottom: 6,
+        }}
+      >
+        {diagnosis.headline}
+      </div>
+      {diagnosis.explanation && (
+        <div style={{ fontSize: 12, lineHeight: 1.5, opacity: 0.9, marginBottom: 8 }}>
+          {diagnosis.explanation}
+        </div>
+      )}
+      {culpritLabels.length > 0 && (
+        <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 6 }}>
+          <span style={{ opacity: 0.7 }}>Culprit{culpritLabels.length > 1 ? "s" : ""}: </span>
+          <span style={{ fontWeight: 600 }}>{culpritLabels.join(", ")}</span>
+        </div>
+      )}
+      {diagnosis.evidence.length > 0 && (
+        <div style={{ marginTop: 4, marginBottom: 8 }}>
+          <div style={{ fontSize: 10, letterSpacing: 1, textTransform: "uppercase", opacity: 0.55, marginBottom: 3 }}>
+            Evidence
+          </div>
+          {diagnosis.evidence.map((e, i) => (
+            <div
+              key={i}
+              style={{
+                fontSize: 11,
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 8,
+                padding: "1px 0",
+              }}
+            >
+              <span style={{ opacity: 0.7 }}>{e.label}</span>
+              <span style={{ fontFamily: "var(--font-mono), ui-monospace, monospace", fontWeight: 600 }}>
+                {e.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      {diagnosis.suggestions.length > 0 && (
+        <div>
+          <div style={{ fontSize: 10, letterSpacing: 1, textTransform: "uppercase", opacity: 0.55, marginBottom: 3 }}>
+            Try next
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, lineHeight: 1.5 }}>
+            {diagnosis.suggestions.map((s, i) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Map a category to a coloured tone. Fail-y = red, pass-thin = amber,
+ *  clean pass = soft blue. */
+function toneFor(category: Diagnosis["category"]): { bar: string; bg: string } {
+  switch (category) {
+    case "passed_clean":
+      return { bar: "#60a5fa", bg: "rgba(96,165,250,0.08)" };
+    case "headroom_thin":
+      return { bar: "#fbbf24", bg: "rgba(251,191,36,0.08)" };
+    default:
+      return { bar: "#f87171", bg: "rgba(248,113,113,0.08)" };
+  }
+}

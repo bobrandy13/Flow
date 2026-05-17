@@ -116,10 +116,37 @@ const simulationMetricsSchema = z.object({
   bottleneckNodeId: z.string().optional(),
 });
 
+const diagnosisEvidenceSchema = z.object({
+  label: z.string(),
+  value: z.string(),
+});
+
+const diagnosisCategorySchema = z.enum([
+  "no_failover",
+  "breaker_absent",
+  "queue_overflow",
+  "rate_limit_pressure",
+  "node_overloaded",
+  "latency_path_too_long",
+  "cache_underused",
+  "headroom_thin",
+  "passed_clean",
+]);
+
+const diagnosisSchema = z.object({
+  category: diagnosisCategorySchema,
+  headline: z.string(),
+  explanation: z.string(),
+  culpritNodeIds: z.array(z.string()),
+  evidence: z.array(diagnosisEvidenceSchema),
+  suggestions: z.array(z.string()),
+});
+
 const simulationOutcomeSchema = z.object({
   passed: z.boolean(),
   metrics: simulationMetricsSchema,
   failureReason: z.string().optional(),
+  diagnosis: diagnosisSchema,
 });
 
 const nodeRuntimeSnapshotSchema = z.object({

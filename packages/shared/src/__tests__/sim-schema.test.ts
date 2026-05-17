@@ -100,6 +100,14 @@ describe("simulationResultSchema", () => {
       outcome: {
         passed: true,
         metrics: { avgLatency: 1, p95Latency: 2, successRate: 1, drops: 0 },
+        diagnosis: {
+          category: "passed_clean" as const,
+          headline: "Clean pass",
+          explanation: "",
+          culpritNodeIds: [],
+          evidence: [],
+          suggestions: [],
+        },
       },
     };
     expect(() => simulationResultSchema.parse(result)).not.toThrow();

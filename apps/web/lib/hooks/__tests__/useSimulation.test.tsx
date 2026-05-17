@@ -43,6 +43,14 @@ function makeFrames(n: number): TickFrame[] {
 const outcome: SimulationOutcome = {
   passed: true,
   metrics: { avgLatency: 1, p95Latency: 2, successRate: 1, drops: 0 },
+  diagnosis: {
+    category: "passed_clean",
+    headline: "Clean pass",
+    explanation: "",
+    culpritNodeIds: [],
+    evidence: [],
+    suggestions: [],
+  },
 };
 
 function mockFetchOk(frames: TickFrame[]) {

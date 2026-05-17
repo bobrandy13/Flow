@@ -39,6 +39,14 @@ const OUTCOME: SimulationOutcome = {
     drops: 545,
     bottleneckNodeId: "s",
   },
+  diagnosis: {
+    category: "node_overloaded",
+    headline: "Your Server ran out of capacity",
+    explanation: "",
+    culpritNodeIds: ["s"],
+    evidence: [],
+    suggestions: [],
+  },
 };
 
 describe("buildSimulationLogs", () => {
@@ -67,6 +75,14 @@ describe("buildSimulationLogs", () => {
     const happy: SimulationOutcome = {
       passed: true,
       metrics: { avgLatency: 4, p95Latency: 5, successRate: 1, drops: 0 },
+      diagnosis: {
+        category: "passed_clean",
+        headline: "Clean pass",
+        explanation: "",
+        culpritNodeIds: [],
+        evidence: [],
+        suggestions: [],
+      },
     };
     const text = buildSimulationLogs({
       diagram: DIAGRAM,

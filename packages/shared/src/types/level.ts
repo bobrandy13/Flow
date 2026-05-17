@@ -67,6 +67,23 @@ export type LessonBlock =
       /** Code/terminal snippet — rendered as a monospace block. */
       type: "code";
       text: string;
+    }
+  | {
+      /**
+       * Prerequisite knowledge callout — rendered as a collapsible accordion
+       * at the top of a lesson section. Each item is a term (matching a
+       * glossary key) and an ELI5 one-liner the player should already understand
+       * before reading on. Collapsed by default.
+       */
+      type: "prereq";
+      /** Optional heading. Defaults to "You'll want to know first". */
+      title?: string;
+      items: {
+        /** Matches a key in the web app's GLOSSARY map. */
+        term: string;
+        /** One short sentence — plain English, no jargon. */
+        eli5: string;
+      }[];
     };
 
 export interface LessonSection {

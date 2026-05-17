@@ -30,7 +30,64 @@ export interface ValidationReport {
 export interface SimulationOutcome {
   passed: boolean;
   metrics: SimulationMetrics;
+  /**
+   * Back-compat one-liner mirroring `diagnosis.headline`. Kept optional so
+   * older fixtures still load; new code should read `diagnosis.headline`.
+   */
   failureReason?: string;
+  /** Structured mentor verdict. Always present on real runs. */
+  diagnosis: Diagnosis;
+}
+
+/**
+ * Categories of mentor verdict the diagnostic engine can produce. Ordered
+ * roughly by specificity — the cascade in `diagnose()` tries the more
+ * specific probes first.
+ */
+export type DiagnosisCategory =
+  /** A scheduled failure window hit a node with no replica/failover. */
+  | "no_failover"
+  /** A downstream failure cascaded upstream without a circuit breaker. */
+  | "breaker_absent"
+  /** A queue's pending depth saturated and drops happened at the queue. */
+  | "queue_overflow"
+  /** A rate limiter dropped traffic by design (often expected). */
+  | "rate_limit_pressure"
+  /** A single non-client node ran out of capacity and dominated drops. */
+  | "node_overloaded"
+  /** Success rate fine but p95 latency blown — too many serial hops. */
+  | "latency_path_too_long"
+  /** A cache is present but the bottleneck is downstream of it. */
+  | "cache_underused"
+  /** PASS but the bottleneck node spent most of the run >= 85% utilised. */
+  | "headroom_thin"
+  /** PASS with nothing obvious to flag. */
+  | "passed_clean";
+
+/** A single piece of numeric evidence backing a diagnosis. */
+export interface DiagnosisEvidence {
+  /** Short label e.g. "Database drops". */
+  label: string;
+  /** Pre-formatted human value e.g. "412 / 580 (71%)". */
+  value: string;
+}
+
+/**
+ * Mentor-style verdict on a simulation run. Produced by the pure
+ * `diagnose()` function in `engine/diagnose.ts` after the run completes.
+ */
+export interface Diagnosis {
+  category: DiagnosisCategory;
+  /** One-line summary — replaces the legacy `failureReason` string. */
+  headline: string;
+  /** 1–3 paragraphs of plain-language explanation. */
+  explanation: string;
+  /** Node ids the diagnosis points at; UI resolves to labels. */
+  culpritNodeIds: string[];
+  /** Concrete numbers backing the diagnosis. */
+  evidence: DiagnosisEvidence[];
+  /** Actionable hints — pattern names, not implementation steps. */
+  suggestions: string[];
 }
 
 export interface SimulationMetrics {
