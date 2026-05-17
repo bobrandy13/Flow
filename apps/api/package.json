@@ -19,7 +19,7 @@
     "@flow/shared": "workspace:*",
     "fastify": "^5",
     "fastify-type-provider-zod": "^5",
-    "zod": "^3"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^20",

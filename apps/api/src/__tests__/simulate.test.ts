@@ -42,6 +42,23 @@ describe("POST /api/simulate", () => {
     expect(typeof body.outcome.passed).toBe("boolean");
   });
 
+  // Regression: a Zod v3/v4 mismatch between apps/api and @flow/shared caused
+  // the validator to blow up with `Cannot read properties of undefined (reading
+  // 'run')` and return a 500. The shared zod is v4 and the route's schemas
+  // *must* be v4 instances for fastify-type-provider-zod@5 to validate them.
+  // Keep these versions aligned — any 5xx on a plain validation failure means
+  // the zod versions have drifted again.
+  it("rejects an empty body with a 4xx validation error, never a 500", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/simulate",
+      payload: {},
+    });
+    expect(res.statusCode).toBe(400);
+    const body = res.json() as { message?: string };
+    expect(body.message ?? "").not.toMatch(/Cannot read properties of undefined/);
+  });
+
   it("rejects malformed input with 400", async () => {
     const bad = validInput() as unknown as Record<string, unknown> & {
       diagram: { nodes: { kind: string }[] };
