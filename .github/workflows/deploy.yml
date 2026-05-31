@@ -95,6 +95,15 @@ jobs:
             --max-instances=2
             --memory=512Mi
             --cpu=1
+          # Injects the Cloudflare origin secret from Secret Manager as the
+          # ORIGIN_SHARED_SECRET env var. Only a reference lives here — the
+          # value stays in Secret Manager. The API rejects any request lacking
+          # the matching x-origin-secret header (set by a Cloudflare Transform
+          # Rule), so direct hits to the *.run.app URL are turned away.
+          # Prereqs: secret `origin-shared-secret` exists and the runtime
+          # service account has roles/secretmanager.secretAccessor.
+          secrets: |
+            ORIGIN_SHARED_SECRET=origin-shared-secret:latest
           env_vars: |
             HOST=0.0.0.0
             NODE_ENV=production
