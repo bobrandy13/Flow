@@ -1,13 +1,6 @@
 ---
-description: Disciplined diagnosis loop for hard bugs and performance regressions. Reproduce → minimise → hypothesise → instrument → fix → regression-test. Use when user says "diagnose this" / "debug this", reports a bug, says something is broken/throwing/failing, or describes a performance regression.
-metadata:
-    author: Matt Pocock
-    author_url: https://github.com/mattpocock
-    github-path: skills/engineering/diagnose
-    github-ref: refs/heads/main
-    github-repo: https://github.com/mattpocock/skills
-    github-tree-sha: e74f0061bb67222181640effa98c675bdb2fdaa7
 name: diagnose
+description: Disciplined diagnosis loop for hard bugs and performance regressions. Reproduce → minimise → hypothesise → instrument → fix → regression-test. Use when user says "diagnose this" / "debug this", reports a bug, says something is broken/throwing/failing, or describes a performance regression.
 ---
 
 # Diagnose

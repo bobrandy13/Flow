@@ -1,13 +1,6 @@
 ---
-description: Create new agent skills with proper structure, progressive disclosure, and bundled resources. Use when user wants to create, write, or build a new skill.
-metadata:
-    author: Matt Pocock
-    author_url: https://github.com/mattpocock
-    github-path: skills/productivity/write-a-skill
-    github-ref: refs/heads/main
-    github-repo: https://github.com/mattpocock/skills
-    github-tree-sha: e74f0061bb67222181640effa98c675bdb2fdaa7
 name: write-a-skill
+description: Create new agent skills with proper structure, progressive disclosure, and bundled resources. Use when user wants to create, write, or build a new skill.
 ---
 
 # Writing Skills

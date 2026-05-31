@@ -11,8 +11,13 @@ const CORS_ORIGINS = (process.env.CORS_ORIGINS ?? "http://localhost:3000")
   .map((s) => s.trim())
   .filter(Boolean);
 
+const ORIGIN_SHARED_SECRET = process.env.ORIGIN_SHARED_SECRET?.trim() || undefined;
+
 async function main() {
-  const app = await buildApp({ corsOrigins: CORS_ORIGINS });
+  const app = await buildApp({
+    corsOrigins: CORS_ORIGINS,
+    originSharedSecret: ORIGIN_SHARED_SECRET,
+  });
 
   const shutdown = async (signal: string) => {
     app.log.info({ signal }, "shutting down");
