@@ -69,6 +69,7 @@ export function ResizableSidePanel({ children, storageKey = STORAGE_KEY, expandT
 
   useEffect(() => {
     if (!expandTrigger) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing panel state to an external one-shot trigger (parent bumps a counter)
     setCollapsed(false);
     persist({ collapsed: false });
   }, [expandTrigger, persist]);

@@ -17,6 +17,7 @@ function useQuizResults() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(QUIZ_STORAGE_KEY) ?? "{}";
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration from localStorage on mount
       setResults(JSON.parse(raw) as Record<string, { score: number; total: number }>);
     } catch { /* ignore */ }
   }, []);

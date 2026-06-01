@@ -46,6 +46,7 @@ export default function PlayPage() {
   } = useDiagramEditor({ maxOf: level?.maxOf, initialDiagram: level?.starterDiagram });
 
   const [baseReport, setBaseReport] = useState<ValidationReport | null>(null);
+  const [sidePanelExpandTrigger, setSidePanelExpandTrigger] = useState(0);
 
   // Build the SimulationInput (or null when prerequisites aren't met). We
   // intentionally key the input by the diagram + level identity, NOT by
@@ -124,8 +125,6 @@ export default function PlayPage() {
     setBaseReport(null);
     sim.reset();
   }, [resetDiagram, sim]);
-
-  const [sidePanelExpandTrigger, setSidePanelExpandTrigger] = useState(0);
 
   // On a "fix the broken design" level, when the inherited design finishes its
   // first run, expand the side panel so the player sees the full diagnosis
