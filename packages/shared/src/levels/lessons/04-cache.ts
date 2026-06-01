@@ -4,7 +4,7 @@ export const LESSON_04_CACHE: Lesson = {
   tagline: "The fastest request is the one you don't have to compute.",
   sections: [
     {
-      heading: "What a cache does",
+      heading: "The wall moved",
       blocks: [
         {
           type: "prereq",
@@ -15,6 +15,25 @@ export const LESSON_04_CACHE: Lesson = {
             { term: "request", eli5: "A message asking a server to do something or return data." },
           ],
         },
+        {
+          type: "p",
+          text: "Last level you fixed an overloaded server by scaling out: more servers behind a load balancer. That works until the bottleneck moves. Now every server forwards its reads to the same single database, and the database has its own capacity ceiling. You've pushed the wall one tier downstream.",
+        },
+        {
+          type: "callout",
+          tone: "warn",
+          title: "Scaling out has a limit here",
+          text: "Adding a fourth, fifth, or tenth server changes nothing once the database is the bottleneck: they all queue behind the same storage. When the next tier is the wall, adding capacity to the previous tier is wasted money. You have to reduce the work reaching the database, not add machines in front of it.",
+        },
+        {
+          type: "p",
+          text: "That's what a cache does. Instead of giving the database more help, you stop most requests from ever reaching it.",
+        },
+      ],
+    },
+    {
+      heading: "What a cache does",
+      blocks: [
         {
           type: "p",
           text: "A cache is like a sticky-note pad of recent answers. When the same question comes in again, the server can return the cached answer immediately instead of going all the way to the database. Memory lookups are orders of magnitude faster than database queries, so a well-tuned cache dramatically reduces both latency and database load.",
@@ -97,8 +116,9 @@ export const LESSON_04_CACHE: Lesson = {
     },
   ],
   cheatsheet: [
+    "When the next tier down is the bottleneck, adding more of the previous tier does nothing.",
+    "A cache fixes a database bottleneck by removing reads, not by adding capacity.",
+    "Put the cache on the read path: Server -> Cache -> Database (misses fall through).",
     "Cache reads; the database stays the source of truth.",
-    "On the canvas, set the edge's cache hit rate to model your workload's read locality.",
-    "Low hit rate = cache isn't helping. Try a different lever.",
   ],
 };

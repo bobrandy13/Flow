@@ -227,7 +227,7 @@ function LiveStatsPanel({ kind, runtime }: { kind: DiagramNode["kind"]; runtime:
       <div style={{ ...subPanelHeaderStyle, color: color.accent }}>● LIVE · TELEMETRY</div>
       <div style={{ fontSize: 12, lineHeight: 1.45, marginBottom: 6 }}>
         Right now: <strong>{runtime.inFlight}</strong> of <strong>{cap}</strong> slots in use
-        {" "}<span style={{ opacity: 0.65 }}>({(pct * 100).toFixed(0)}% busy).</span>
+        {" "}<span style={{ opacity: 0.65 }}>({(pct * 100).toFixed(0)}% full).</span>
       </div>
       <div
         style={{

@@ -1,5 +1,6 @@
 import type { ComponentKind } from "./components";
 import type { Rule } from "./validation";
+import type { Diagram } from "./diagram";
 
 /**
  * Workload definition for a level's simulation.
@@ -119,6 +120,14 @@ export interface Level {
    * when unset.
    */
   chapter?: "Basics" | "Scaling" | "Composition" | "Reliability" | "Edge";
+  /**
+   * Optional pre-built diagram loaded onto the canvas when the level opens.
+   * Used for "fix the broken design" levels: the student inherits the previous
+   * chapter's topology, intentionally overloaded, and must repair it. Loaded
+   * PAUSED — the player clicks Play to watch it fail, then edits. When unset,
+   * the canvas starts empty.
+   */
+  starterDiagram?: Diagram;
   /** Components the player is allowed to place from the palette. */
   allowedComponents: ComponentKind[];
   /** Optional cap on count per kind. */

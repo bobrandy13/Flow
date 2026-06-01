@@ -8,7 +8,8 @@
     "./engine/*": "./src/engine/*.ts",
     "./simulation/*": "./src/simulation/*.ts",
     "./schemas/*": "./src/schemas/*.ts",
-    "./levels": "./src/levels/index.ts"
+    "./levels": "./src/levels/index.ts",
+    "./quizzes": "./src/quizzes/index.ts"
   },
   "scripts": {
     "lint": "eslint src",

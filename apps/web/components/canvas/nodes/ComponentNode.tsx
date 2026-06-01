@@ -132,20 +132,48 @@ export function ComponentNode({ data, selected }: NodeProps) {
           {REGION_LABELS[nodeData.region]}
         </div>
       )}
+      {/* Floating "−N" mark that pops off the node each time it sheds requests. */}
+      {pulseKey > 0 && (runtime?.droppedThisTick ?? 0) > 0 && (
+        <span
+          key={`drop-${pulseKey}`}
+          className="flow-drop-mark"
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: -6,
+            left: "50%",
+            fontSize: 13,
+            fontWeight: 800,
+            color: "#ef4444",
+            textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          ✕ −{runtime!.droppedThisTick}
+        </span>
+      )}
       {runtime && !isUnbounded && (() => {
         const tps = throughputPerSecond(spec);
         const tpsLabel = tps >= 1000 ? `${(tps / 1000).toFixed(1)}k` : `${Math.round(tps)}`;
         const pct = Math.min(1, runtime.inFlight / cap);
-        // Bar color ramps green → amber → red as utilization climbs.
-        const barColor = pct < 0.6 ? "#22c55e" : pct < 0.85 ? "#f59e0b" : "#ef4444";
+        const isDropping = runtime.droppedThisTick > 0;
+        // Plain-language status replaces the "concurrent slots" jargon.
+        const status = isDropping
+          ? { label: "OVERLOADED", color: "#ef4444" }
+          : pct < 0.6
+            ? { label: "OK", color: "#22c55e" }
+            : pct < 0.85
+              ? { label: "HEAVY", color: "#f59e0b" }
+              : { label: "FULL", color: "#ef4444" };
         const tipText =
-          `Busy: ${runtime.inFlight} of ${cap} concurrent slots in use (${(pct * 100).toFixed(0)}% full).\n` +
+          `${status.label}: ${runtime.inFlight} of ${cap} concurrent slots in use (${(pct * 100).toFixed(0)}% full).\n` +
           `Each request holds a slot for ~${spec.baseLatency} ticks, so this node can sustain ≈ ${tpsLabel} req/s.\n` +
           `(Capacity = how many at the same time, NOT max requests/sec.)` +
           (runtime.droppedTotal > 0 ? `\nDropped so far: ${runtime.droppedTotal}` : "");
         return (
           <div
-            aria-label="utilization meter"
+            aria-label="load meter"
             title={tipText}
             style={{
               marginTop: 8,
@@ -161,13 +189,12 @@ export function ComponentNode({ data, selected }: NodeProps) {
                 justifyContent: "space-between",
                 alignItems: "center",
                 fontSize: 9,
-                fontWeight: 600,
-                opacity: 0.75,
+                fontWeight: 700,
                 lineHeight: 1,
               }}
             >
-              <span>{runtime.inFlight}/{cap} busy</span>
-              <span style={{ opacity: 0.7 }}>~{tpsLabel}/s</span>
+              <span style={{ color: status.color, letterSpacing: 0.4 }}>{status.label}</span>
+              <span style={{ opacity: 0.7 }}>{Math.round(pct * 100)}% full</span>
             </div>
             <div
               style={{
@@ -182,12 +209,31 @@ export function ComponentNode({ data, selected }: NodeProps) {
                 style={{
                   height: "100%",
                   width: `${pct * 100}%`,
-                  background: barColor,
+                  background: status.color,
                   transition: "width 120ms linear, background 200ms ease",
-                  boxShadow: pct >= 0.85 ? `0 0 6px ${barColor}` : "none",
+                  boxShadow: pct >= 0.85 ? `0 0 6px ${status.color}` : "none",
                 }}
               />
             </div>
+            {/* Persistent drop tally — stays visible so the failure is unmissable. */}
+            {runtime.droppedTotal > 0 && (
+              <div
+                style={{
+                  marginTop: 2,
+                  alignSelf: "stretch",
+                  textAlign: "center",
+                  fontSize: 9,
+                  fontWeight: 800,
+                  letterSpacing: 0.3,
+                  color: "#fff",
+                  background: "#ef4444",
+                  borderRadius: 3,
+                  padding: "1px 0",
+                }}
+              >
+                ⊘ {runtime.droppedTotal.toLocaleString()} dropped
+              </div>
+            )}
           </div>
         );
       })()}

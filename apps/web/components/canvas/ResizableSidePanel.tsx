@@ -13,6 +13,8 @@ interface ResizableSidePanelProps {
   children: React.ReactNode;
   /** Override the storage key (mostly useful for tests). */
   storageKey?: string;
+  /** Increment to programmatically force-expand the panel (e.g. after validate). */
+  expandTrigger?: number;
 }
 
 /**
@@ -23,7 +25,7 @@ interface ResizableSidePanelProps {
  * Implemented as a draggable splitter rather than CSS resize so we can clamp
  * the range, persist the value, and animate the collapse smoothly.
  */
-export function ResizableSidePanel({ children, storageKey = STORAGE_KEY }: ResizableSidePanelProps) {
+export function ResizableSidePanel({ children, storageKey = STORAGE_KEY, expandTrigger }: ResizableSidePanelProps) {
   const [width, setWidth] = useState<number>(DEFAULT_WIDTH);
   const [collapsed, setCollapsed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -64,6 +66,12 @@ export function ResizableSidePanel({ children, storageKey = STORAGE_KEY }: Resiz
     },
     [storageKey],
   );
+
+  useEffect(() => {
+    if (!expandTrigger) return;
+    setCollapsed(false);
+    persist({ collapsed: false });
+  }, [expandTrigger, persist]);
 
   const onDragStart = useCallback(
     (e: React.MouseEvent) => {

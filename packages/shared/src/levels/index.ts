@@ -44,7 +44,7 @@ export const LEVELS: Level[] = [
     chapter: "Basics",
     lesson: LESSON_02_PERSISTENCE,
     brief:
-      "Servers are stateless. Add a database behind your server so writes survive a restart. The client should still only talk to the server.",
+      "Servers forget everything when they restart — their memory is wiped. Add a database behind your server so writes are saved permanently. Note: you won't see this design fail in the simulation (a crash isn't part of the workload) — persistence is insurance for when things go wrong, not a throughput fix. Build the habit now. The client should still only talk to the server.",
     allowedComponents: ["client", "server", "database"],
     maxOf: { client: 1, server: 1, database: 1 },
     rules: [
@@ -64,7 +64,20 @@ export const LEVELS: Level[] = [
     chapter: "Basics",
     lesson: LESSON_03_SCALE_OUT,
     brief:
-      "One server can't keep up. Place a load balancer in front of two servers so traffic is spread across them. The database is shared.",
+      "We've loaded your single-server design from the last level and aimed real traffic at it. Press Play: it drops over half of every request. One server has a hard ceiling, and you've hit it. Fix the design — put a load balancer in front of a pool of servers so the work spreads out. The database is shared.",
+    // The student inherits the overloaded single-server topology and repairs it.
+    // Proven: this design serves only ~52% at 22 req/tick; LB + 2 servers ~99%.
+    starterDiagram: {
+      nodes: [
+        { id: "c1", kind: "client", position: { x: 80, y: 200 } },
+        { id: "s1", kind: "server", position: { x: 340, y: 200 } },
+        { id: "db1", kind: "database", position: { x: 600, y: 200 } },
+      ],
+      edges: [
+        { id: "c1-s1", fromNodeId: "c1", toNodeId: "s1" },
+        { id: "s1-db1", fromNodeId: "s1", toNodeId: "db1" },
+      ],
+    },
     allowedComponents: ["client", "server", "database", "load_balancer"],
     maxOf: { client: 1, load_balancer: 1, server: 4, database: 1 },
     rules: [
@@ -86,16 +99,40 @@ export const LEVELS: Level[] = [
     chapter: "Basics",
     lesson: LESSON_04_CACHE,
     brief:
-      "Database reads are expensive. Put a cache between your servers and the database. Tune the hit rate on the cache edge.",
+      "Here's your scaled-out design: three servers behind a load balancer. Press Play — it's still dropping requests. But a fourth server won't save you: every server piles onto the same database, and the database is now the ceiling (try it — more servers change nothing). You can't out-scale this by adding machines. Instead, remove the work: put a cache between the servers and the database so most reads are answered instantly and never reach it.",
+    // The student inherits the scaled L03 design — now DB-bottlenecked. Proven:
+    // LB+3 servers at 28 req/tick serves ~89% (database is the wall); adding a
+    // cache on the read path lifts it to ~99%. A 4th server does NOT help
+    // (database ceiling), which is the whole lesson: eliminate work, don't add capacity.
+    starterDiagram: {
+      nodes: [
+        { id: "c1", kind: "client", position: { x: 60, y: 220 } },
+        { id: "lb1", kind: "load_balancer", position: { x: 260, y: 220 } },
+        { id: "s1", kind: "server", position: { x: 480, y: 120 } },
+        { id: "s2", kind: "server", position: { x: 480, y: 220 } },
+        { id: "s3", kind: "server", position: { x: 480, y: 320 } },
+        { id: "db1", kind: "database", position: { x: 720, y: 220 } },
+      ],
+      edges: [
+        { id: "c1-lb1", fromNodeId: "c1", toNodeId: "lb1" },
+        { id: "lb1-s1", fromNodeId: "lb1", toNodeId: "s1" },
+        { id: "lb1-s2", fromNodeId: "lb1", toNodeId: "s2" },
+        { id: "lb1-s3", fromNodeId: "lb1", toNodeId: "s3" },
+        { id: "s1-db1", fromNodeId: "s1", toNodeId: "db1" },
+        { id: "s2-db1", fromNodeId: "s2", toNodeId: "db1" },
+        { id: "s3-db1", fromNodeId: "s3", toNodeId: "db1" },
+      ],
+    },
     allowedComponents: ["client", "server", "database", "load_balancer", "cache"],
+    maxOf: { client: 1, load_balancer: 1, server: 3, cache: 1, database: 1 },
     rules: [
       { type: "requires_kind", kind: "cache", min: 1 },
-      { type: "requires_path", from: "client", to: "server" },
       { type: "requires_path", from: "server", to: "cache" },
+      { type: "requires_path", from: "cache", to: "database" },
     ],
     simulation: {
-      workload: { requestsPerTick: 18, ticks: 120 },
-      sla: { minSuccessRate: 0.9, maxP95Latency: 40 },
+      workload: { requestsPerTick: 28, ticks: 120 },
+      sla: { minSuccessRate: 0.9, maxP95Latency: 50 },
       seed: 4,
     },
   },

@@ -70,8 +70,8 @@ body {
   transform: translateY(4px);
   transition: opacity 120ms ease, transform 120ms ease;
 }
-.flow-tooltip:hover .flow-tooltip__bubble,
-.flow-tooltip:focus-within .flow-tooltip__bubble {
+.flow-tooltip:hover > .flow-tooltip__bubble,
+.flow-tooltip:focus-within > .flow-tooltip__bubble {
   opacity: 1;
   transform: translateY(0);
 }
@@ -121,12 +121,22 @@ body {
 
 /* Brief flash when a node drops requests during the live simulation. */
 @keyframes flow-node-drop-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-  60%  { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.85); }
+  60%  { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
   100% { box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
 }
 .flow-node--drop-pulse {
   animation: flow-node-drop-pulse 500ms ease-out;
+}
+
+/* Floating "−N dropped" mark that pops off a node each time it sheds requests. */
+@keyframes flow-drop-mark {
+  0%   { opacity: 0; transform: translate(-50%, 0) scale(0.7); }
+  15%  { opacity: 1; transform: translate(-50%, -6px) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -34px) scale(1); }
+}
+.flow-drop-mark {
+  animation: flow-drop-mark 900ms ease-out forwards;
 }
 
 /* Glossary tooltip fade-in */

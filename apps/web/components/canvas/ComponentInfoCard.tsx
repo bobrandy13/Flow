@@ -13,6 +13,12 @@ interface ComponentInfoCardProps {
   kind: ComponentKind;
   /** When true, render a compact one-line variant suitable for tooltips. */
   compact?: boolean;
+  /**
+   * When true, render spec explanations as inline text instead of nested
+   * hover tooltips. Use inside an already-hovering container (e.g. the
+   * palette popover) to avoid tooltip-inside-tooltip clutter.
+   */
+  staticTips?: boolean;
 }
 
 /**
@@ -20,7 +26,7 @@ interface ComponentInfoCardProps {
  * when a node is selected and inside palette hover-popovers, so beginners
  * always have a way to learn what each component is and what its numbers mean.
  */
-export function ComponentInfoCard({ kind, compact = false }: ComponentInfoCardProps) {
+export function ComponentInfoCard({ kind, compact = false, staticTips = false }: ComponentInfoCardProps) {
   const spec = COMPONENT_SPECS[kind];
   const explainer = KIND_EXPLAINERS[kind];
   const latency = formatLatency(spec.baseLatency);
@@ -51,17 +57,30 @@ export function ComponentInfoCard({ kind, compact = false }: ComponentInfoCardPr
         label="Latency"
         primary={latency.primary}
         tip={`How long this component spends handling each request. ${latency.secondary} in simulation time. Jitter ±${Math.round(spec.jitter * 100)}% adds realistic variation.`}
+        staticTip={staticTips}
       />
       <SpecRow
         label="Capacity"
         primary={capacity.primary}
         tip={`Max requests this component can work on at the same time. ${capacity.secondary}, derived from capacity ÷ latency. If more requests arrive than this, they get dropped.`}
+        staticTip={staticTips}
       />
     </div>
   );
 }
 
-function SpecRow({ label, primary, tip }: { label: string; primary: string; tip: string }) {
+function SpecRow({ label, primary, tip, staticTip }: { label: string; primary: string; tip: string; staticTip?: boolean }) {
+  if (staticTip) {
+    return (
+      <div style={{ marginTop: 8 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ opacity: 0.6 }}>{label}</span>
+          <span style={{ fontWeight: 600 }}>{primary}</span>
+        </div>
+        <div style={{ opacity: 0.55, fontSize: 11, lineHeight: 1.4, marginTop: 2 }}>{tip}</div>
+      </div>
+    );
+  }
   return (
     <div
       style={{

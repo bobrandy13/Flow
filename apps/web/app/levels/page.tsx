@@ -1,13 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LEVELS } from "@flow/shared/levels";
+import { CHAPTER_QUIZZES } from "@flow/shared/quizzes";
 import type { Level } from "@flow/shared/types/level";
 import { useProgress } from "@/lib/hooks/useProgress";
 import { clearAllProgress } from "@/lib/storage/progress";
 import { notifyProgressChanged } from "@/lib/hooks/useProgress";
 import { color, fontFamily, radius } from "@/lib/ui/theme";
+
+const QUIZ_STORAGE_KEY = "flow.quiz.v1";
+
+function useQuizResults() {
+  const [results, setResults] = useState<Record<string, { score: number; total: number }>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(QUIZ_STORAGE_KEY) ?? "{}";
+      setResults(JSON.parse(raw) as Record<string, { score: number; total: number }>);
+    } catch { /* ignore */ }
+  }, []);
+  return results;
+}
 
 const CHAPTER_ORDER: Array<NonNullable<Level["chapter"]>> = [
   "Basics",
@@ -47,6 +61,7 @@ const FILTERS: Array<{ key: FilterKey; label: string }> = [
 
 export default function LevelsPage() {
   const progress = useProgress();
+  const quizResults = useQuizResults();
   const [filter, setFilter] = useState<FilterKey>("all");
 
   const byChapter = useMemo(() => {
@@ -277,6 +292,43 @@ export default function LevelsPage() {
                   />
                 ))}
               </ul>
+              {/* Chapter capstone quiz */}
+              {unlocked && (() => {
+                const quiz = CHAPTER_QUIZZES.find((q) => q.chapter === chapter);
+                if (!quiz) return null;
+                const result = quizResults[quiz.slug];
+                const passed = result && Math.round((result.score / result.total) * 100) >= 80;
+                return (
+                  <Link
+                    href={`/quiz/${quiz.slug}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      marginTop: 10,
+                      padding: "12px 16px",
+                      border: `1px solid ${passed ? color.success : color.borderStrong}`,
+                      borderLeft: `3px solid ${passed ? color.success : color.accent}`,
+                      background: passed ? "rgba(155, 227, 107, 0.05)" : "rgba(122, 223, 255, 0.04)",
+                      color: color.text,
+                      textDecoration: "none",
+                    }}
+                  >
+                    <span style={{ fontSize: 20 }}>{passed ? "✅" : "📝"}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: fontFamily.display, fontSize: 13, letterSpacing: 1, textTransform: "uppercase", color: passed ? color.success : color.accent }}>
+                        {quiz.title}
+                      </div>
+                      <div style={{ fontFamily: fontFamily.mono, fontSize: 11, color: color.textMuted, marginTop: 2 }}>
+                        {result
+                          ? `${result.score}/${result.total} correct · ${Math.round((result.score / result.total) * 100)}%${passed ? " · PASSED" : " · RETRY TO IMPROVE"}`
+                          : `${quiz.questions.length} questions · Test your ${chapter.toLowerCase()} knowledge`}
+                      </div>
+                    </div>
+                    <span style={{ fontFamily: fontFamily.mono, fontSize: 14, color: passed ? color.success : color.accent }}>▸</span>
+                  </Link>
+                );
+              })()}
             </section>
           );
         })}

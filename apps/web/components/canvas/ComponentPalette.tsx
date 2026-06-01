@@ -216,7 +216,7 @@ export function ComponentPalette({ allowed, onAdd, counts, maxOf }: ComponentPal
                   className="flow-tooltip__bubble"
                   style={{ left: "calc(100% + 8px)", bottom: "auto", top: 0 }}
                 >
-                  <ComponentInfoCard kind={kind} />
+                  <ComponentInfoCard kind={kind} staticTips />
                 </span>
               </div>
             );

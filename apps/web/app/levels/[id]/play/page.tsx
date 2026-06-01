@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -43,7 +43,7 @@ export default function PlayPage() {
     setSelectedNodeId,
     selectedEdgeId,
     setSelectedEdgeId,
-  } = useDiagramEditor({ maxOf: level?.maxOf });
+  } = useDiagramEditor({ maxOf: level?.maxOf, initialDiagram: level?.starterDiagram });
 
   const [baseReport, setBaseReport] = useState<ValidationReport | null>(null);
 
@@ -81,6 +81,7 @@ export default function PlayPage() {
     const ruleResults = evaluateRules(diagram, level.rules);
     const structuralPassed = ruleResults.every((r) => r.passed);
     setBaseReport({ structuralPassed, ruleResults });
+    setSidePanelExpandTrigger((t) => t + 1);
     sim.reset();
     recordAttempt(level.id, diagram);
   }, [diagram, level, sim]);
@@ -123,6 +124,20 @@ export default function PlayPage() {
     setBaseReport(null);
     sim.reset();
   }, [resetDiagram, sim]);
+
+  const [sidePanelExpandTrigger, setSidePanelExpandTrigger] = useState(0);
+
+  // On a "fix the broken design" level, when the inherited design finishes its
+  // first run, expand the side panel so the player sees the full diagnosis
+  // (bottleneck + suggestions) next to the "now fix it" prompt.
+  const sawOutcomeRef = useRef(false);
+  useEffect(() => {
+    const hasOutcome = !!sim.outcome;
+    if (hasOutcome && !sawOutcomeRef.current && level?.starterDiagram) {
+      setSidePanelExpandTrigger((t) => t + 1);
+    }
+    sawOutcomeRef.current = hasOutcome;
+  }, [sim.outcome, level]);
 
   const [toast, setToast] = useState<string | null>(null);
   const flashToast = useCallback((msg: string) => {
@@ -260,7 +275,86 @@ export default function PlayPage() {
         runDisabled={!canSimulate(diagram)}
         runDisabledReason={simulatabilityIssue ?? undefined}
       />
-      {isSandboxMode && (sim.frame || sim.outcome) && (
+      {level.starterDiagram && !sim.frame && !sim.outcome && !sim.isRunning && !sim.loading && (
+        <div
+          role="status"
+          style={{
+            background: color.highlightSoftBg,
+            borderBottom: `1px solid ${color.highlightSoftBorder}`,
+            color: color.highlight,
+            padding: "10px 16px",
+            fontSize: 13,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <span style={{ fontSize: 16 }}>▶</span>
+          <span style={{ color: color.text }}>
+            <strong style={{ color: color.highlight }}>This design is already broken.</strong>{" "}
+            Press <strong>Play</strong> to watch it fail, see where requests are dropping, then fix it.
+          </span>
+        </div>
+      )}
+      {/* "Fix the broken design" guidance — after the inherited design has run,
+          tell the player exactly what failed and what to do next. */}
+      {level.starterDiagram && sim.outcome && !sim.isRunning && baseReport && !baseReport.structuralPassed && (
+        <div
+          role="status"
+          style={{
+            background: color.highlightSoftBg,
+            borderBottom: `1px solid ${color.highlightSoftBorder}`,
+            padding: "10px 16px",
+            fontSize: 12,
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: fontFamily.display,
+              fontSize: 11,
+              letterSpacing: 2,
+              padding: "2px 8px",
+              border: `1px solid ${color.highlight}`,
+              color: color.highlight,
+              alignSelf: "flex-start",
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}
+          >
+            ⚑ NOW FIX IT
+          </span>
+          <div style={{ flex: 1, color: color.text }}>
+            <div style={{ fontFamily: fontFamily.display, letterSpacing: 1, textTransform: "uppercase", color: color.highlight, marginBottom: 4 }}>
+              {sim.outcome.diagnosis?.headline ?? "This design can't keep up."}
+            </div>
+            <div style={{ color: color.textMuted, marginBottom: 6 }}>
+              You just watched it run:{" "}
+              <strong style={{ color: color.text }}>{formatSuccessRate(sim.outcome.metrics.successRate)}</strong> of requests served,{" "}
+              <strong style={{ color: color.danger }}>{sim.outcome.metrics.drops.toLocaleString()}</strong> dropped.
+              {" "}Your job is to change the design so nothing drops. To pass:
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, listStyle: "disc", color: color.text }}>
+              {baseReport!.ruleResults
+                .filter((r) => !r.passed)
+                .map((r, idx) => (
+                  <li key={idx} style={{ lineHeight: 1.5 }}>{r.message}</li>
+                ))}
+            </ul>
+            {sim.outcome.diagnosis?.suggestions?.[0] && (
+              <div style={{ color: color.accent, marginTop: 6 }}>
+                💡 {sim.outcome.diagnosis.suggestions[0]}
+              </div>
+            )}
+            <div style={{ color: color.textMuted, marginTop: 6, fontStyle: "italic" }}>
+              Edit the diagram from the palette on the left, then press <strong>Validate</strong> to check your fix.
+            </div>
+          </div>
+        </div>
+      )}
+      {isSandboxMode && !level.starterDiagram && (sim.frame || sim.outcome) && (
         <div
           role="status"
           style={{
@@ -358,14 +452,20 @@ export default function PlayPage() {
             </span>
           )}
           <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14, fontFamily: fontFamily.mono, fontSize: 10, color: color.textMuted, letterSpacing: 0.5, flexWrap: "wrap" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }} title="Each node's bar shows how full it is right now. Number on the left = concurrent requests; right = sustained throughput at full capacity.">
-              <span style={{ display: "inline-flex", flexDirection: "column", gap: 2 }}>
-                <span style={{ fontSize: 8, color: color.textSubtle, lineHeight: 1 }}>3/8 BUSY</span>
-                <span style={{ width: 32, height: 4, background: "rgba(122, 223, 255, 0.10)", border: `1px solid ${color.border}`, overflow: "hidden" }}>
-                  <span style={{ display: "block", width: "60%", height: "100%", background: color.success }} />
-                </span>
+            <span
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              title="Each node shows how close it is to its limit: OK (green) → HEAVY (amber) → FULL (red). A node that can't keep up turns OVERLOADED and starts dropping requests."
+            >
+              <span style={{ display: "inline-flex", gap: 3 }}>
+                <span style={{ width: 14, height: 6, background: color.success }} />
+                <span style={{ width: 14, height: 6, background: color.warning }} />
+                <span style={{ width: 14, height: 6, background: color.danger }} />
               </span>
-              <span>NODE FULLNESS</span>
+              <span>NODE LOAD · OK→FULL</span>
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }} title="When a node is overloaded it drops requests — shown as a red ⊘ tally on the node and a red ✕ that pops off it.">
+              <span style={{ color: color.danger, fontWeight: 800 }}>⊘</span>
+              DROPPED
             </span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
               <span style={{ width: 8, height: 8, borderRadius: 999, background: color.accent, boxShadow: `0 0 4px ${color.accent}` }} />
@@ -399,7 +499,7 @@ export default function PlayPage() {
             }}
           />
         </div>
-        <ResizableSidePanel>
+        <ResizableSidePanel expandTrigger={sidePanelExpandTrigger}>
           <div style={{ overflowY: "auto", flex: 1, padding: 0 }}>
             <NodeInspector
               diagram={diagram}
